@@ -660,6 +660,7 @@
   <div class="hero-stats">
     <div class="pill"><span class="dot"></span><span id="tokenCount" class="mono">5</span> jetons</div>
     <div class="pill essence"><span class="dot"></span><span id="totalEssence" class="mono">0</span> essence totale</div>
+    <div class="pill essence"><span class="dot"></span><span id="holyWaterCount" class="mono">0</span> eau bénite</div>
   </div>
 </div>
 
@@ -669,6 +670,7 @@
   <button class="nav-btn" data-tab="collection">Collection</button>
   <button class="nav-btn" data-tab="shop">Boutique</button>
   <button class="nav-btn" data-tab="quests">Quêtes</button>
+  <button class="nav-btn" data-tab="donjon">Donjon</button>
 </div>
 
 <div class="tab active" id="tab-boxes">
@@ -679,6 +681,24 @@
     <button class="cta" id="openBtn">Ouvrir une boîte (1 jeton)</button>
     <br>
     <button class="ghost" id="earnBtn">+ Gagner un jeton</button>
+  </div>
+
+  <div class="shop-wrap" style="padding-top:0;">
+    <div class="shop-section">
+      <div class="section-title">Gamepass — débloque l'ouverture multiple</div>
+      <div class="shop-grid" id="gamepassGrid"></div>
+      <div class="actions" id="multiOpenRow" style="justify-content:center; margin-top:14px;"></div>
+    </div>
+
+    <div class="shop-section">
+      <div class="section-title">Boîte spéciale · Allah 0.01% / Uzu 99.99%</div>
+      <div style="text-align:center;">
+        <div class="box-wrap" id="specialBoxWrap" style="width:130px;height:130px;">
+          <div class="box" id="specialBox" style="font-size:56px;">🎁</div>
+        </div>
+        <button class="cta" id="specialOpenBtn">Ouvrir la sainte box (50 jetons)</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -746,7 +766,7 @@
       <div class="shop-grid" id="shopGrid"></div>
     </div>
     <div class="shop-section">
-      <div class="section-title">Ton sac (objets non équipés)</div>
+      <div class="section-title">Ton sac (objets non équipés) — améliore-les avec de l'eau bénite + des jetons</div>
       <div class="bag-list" id="bagList"></div>
     </div>
   </div>
@@ -758,6 +778,50 @@
     <div class="quest-list" id="questList"></div>
     <div style="text-align:center; margin-top:18px;">
       <button class="ghost" id="newQuestsBtn">Nouvelles quêtes</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab" id="tab-donjon">
+  <div class="combat-wrap">
+    <div id="donjonSetup">
+      <div class="section-title">Empire flotté 7 — 7 ennemis d'affilée, sans régénération entre chaque combat</div>
+      <div class="picker" id="donjonPicker"></div>
+      <div style="text-align:center;">
+        <button class="cta" id="donjonStartBtn" disabled>Entrer dans le donjon</button>
+      </div>
+    </div>
+
+    <div class="vs-stage" id="donjonStage" style="display:none; margin-top:24px;">
+      <div class="section-title" id="donjonEnemyCount">Ennemi 1 / 7</div>
+      <div class="fighters">
+        <div class="fighter player">
+          <span class="icon" id="dpIcon"></span>
+          <div class="name" id="dpName"></div>
+          <div class="hp-bar-bg"><div class="hp-bar-fill" id="dpHpBar" style="width:100%"></div></div>
+          <div class="hp-text" id="dpHpText"></div>
+        </div>
+        <div class="vs-label">VS</div>
+        <div class="fighter enemy">
+          <span class="icon" id="deIcon"></span>
+          <div class="name" id="deName"></div>
+          <div class="hp-bar-bg"><div class="hp-bar-fill" id="deHpBar" style="width:100%"></div></div>
+          <div class="hp-text" id="deHpText"></div>
+        </div>
+      </div>
+
+      <div id="donjonResultZone"></div>
+
+      <div class="actions" id="donjonActionZone">
+        <button class="cta blue" id="dAtkBtn">Attaque</button>
+        <button class="cta" id="dSkillBtn">Compétence spéciale</button>
+      </div>
+
+      <div class="log" id="donjonLog"></div>
+
+      <div style="text-align:center; margin-top:14px;">
+        <button class="ghost" id="donjonQuitBtn">Abandonner / changer de combattant</button>
+      </div>
     </div>
   </div>
 </div>
@@ -784,6 +848,14 @@
   </div>
 </div>
 
+<div class="backdrop" id="multiRevealBackdrop">
+  <div class="char-modal" style="width:min(420px,92vw); text-align:center;">
+    <div class="section-title">Résultats de l'ouverture multiple</div>
+    <div id="multiRevealList" style="display:flex; flex-direction:column; gap:8px; max-height:50vh; overflow-y:auto; margin-bottom:16px;"></div>
+    <button class="cta" id="multiRevealCloseBtn">Encaisser</button>
+  </div>
+</div>
+
 <div class="backdrop" id="charModalBackdrop">
   <div class="char-modal" id="charModal">
     <div class="char-modal-head">
@@ -806,6 +878,7 @@
       <span class="cost mono" id="cmEssenceCost">coût: —</span>
     </div>
     <button class="cta green" id="cmEssenceBoxBtn" style="width:100%;">Ouvrir la boîte unique</button>
+    <button class="ghost small" id="cmConvertEssenceBtn" style="width:100%; margin-top:8px;">Convertir l'essence en eau bénite</button>
 
     <div class="block-title"><span>Formes du personnage</span></div>
     <div class="variants-grid" id="cmVariants"></div>
@@ -836,10 +909,10 @@
 
 <script>
 /* ====================== CONSTANTES ====================== */
-const RARITY_LABEL = { commun:'Commun', rare:'Rare', epique:'Epique', legendaire:'Legendaire' };
-const RARITY_WEIGHT = { commun:14, rare:7, epique:3, legendaire:1 };
-const RARITY_COLOR = { commun:'var(--common)', rare:'var(--reiatsu)', epique:'var(--epique)', legendaire:'var(--gold)' };
-const RARITY_STAT_MULT = { commun:1, rare:1.25, epique:1.55, legendaire:2 };
+const RARITY_LABEL = { commun:'Commun', rare:'Rare', epique:'Epique', legendaire:'Legendaire', mythique:'Mythique' };
+const RARITY_WEIGHT = { commun:14, rare:7, epique:3, legendaire:1, mythique:0 };
+const RARITY_COLOR = { commun:'var(--common)', rare:'var(--reiatsu)', epique:'var(--epique)', legendaire:'var(--gold)', mythique:'var(--mythique)' };
+const RARITY_STAT_MULT = { commun:1, rare:1.25, epique:1.55, legendaire:2, mythique:2.6 };
 
 // Rareté des formes ("variantes") : chaque forme débloquée a sa propre rareté,
 // avec un taux d'apparition et un boost de stats différents.
@@ -881,6 +954,14 @@ const CHARACTERS = [
 
   { id:'azzno', name:'Azzno', icon:'🌑', rarity:'rare', flavor:"Seigneur de l'ombre. Le noir absolu.",
     base:{hp:150, atk:24, def:22, spd:18}, skill:{name:'Extension de la jungle', mult:2.2} },
+
+  // Personnages exclusifs à la Boîte spéciale (voir SPECIAL_BOX_TABLE) : poids RARITY_WEIGHT.mythique = 0
+  // donc ils ne peuvent jamais sortir des boîtes normales.
+  { id:'roi67', name:'Allah', icon:'👑', rarity:'mythique', flavor:"Seigneur de la terre comme des cieux",
+    base:{hp:666, atk:100, def:100, spd:100}, skill:{name:'Colère divine', mult:3.2} },
+
+  { id:'uzu', name:'Uzu', icon:'🐋', rarity:'mythique', flavor:"Esclave de la flotte.",
+    base:{hp:1, atk:1, def:1, spd:1}, skill:{name:'Soumission lunaire', mult:1.9} },
 ];
 
 const VARIANT_NAMES = {
@@ -942,6 +1023,9 @@ const SLOT_LABEL = { arme:'Arme', armure:'Armure', amulette:'Amulette' };
 const FUSION_CHAIN = ['base', 'shiny', 'celeste', 's67', 'moko'];
 // nombre de doublons du palier précédent nécessaires pour obtenir 1 exemplaire du palier indiqué
 const FUSION_REQUIREMENTS = { shiny:10, celeste:5, s67:3, moko:2 };
+// Niveau minimum que le personnage doit avoir atteint pour pouvoir fusionner vers ce palier
+// (en plus d'avoir le nombre de doublons requis ci-dessus).
+const FUSION_LEVEL_REQ = { shiny:10, celeste:20, s67:30, moko:35 };
 const FUSION_TIERS = {
   shiny:   { key:'shiny',   label:'Shiny',   icon:'✨', mult:1.15, color:'#ffe066' },
   celeste: { key:'celeste', label:'Céleste', icon:'🌠', mult:1.35, color:'#8ad7ff' },
@@ -1000,7 +1084,10 @@ const QUEST_POOL = [
 const DEFAULT_STATE = {
   tokens:5, collection:{}, items:[], winStreak:0, itemSeq:1, difficulty:'normal',
   counters:{ wins:0, boxesOpened:0, battles:0, levelUps:0, itemsBought:0, maxStreak:0 },
-  quests:[]
+  quests:[],
+  holyWater:0,
+  gamepass:{ x3:false, x5:false, x10:false },
+  dungeon:{ bestClear:0 }
 };
 function structuredCloneState(o){ return JSON.parse(JSON.stringify(o)); }
 let state = JSON.parse(localStorage.getItem('reiatsu_state_v3') || 'null') || structuredCloneState(DEFAULT_STATE);
@@ -1009,6 +1096,9 @@ function migrateState(){
   if(state.counters === undefined) state.counters = { wins:0, boxesOpened:0, battles:0, levelUps:0, itemsBought:0, maxStreak:0 };
   if(state.counters.maxStreak === undefined) state.counters.maxStreak = state.winStreak || 0;
   if(state.quests === undefined) state.quests = [];
+  if(state.holyWater === undefined) state.holyWater = 0;
+  if(state.gamepass === undefined) state.gamepass = { x3:false, x5:false, x10:false };
+  if(state.dungeon === undefined) state.dungeon = { bestClear:0 };
 }
 migrateState();
 function save(){ localStorage.setItem('reiatsu_state_v3', JSON.stringify(state)); }
@@ -1037,7 +1127,12 @@ function fuseUp(charId, fromKey){
   const toKey = FUSION_CHAIN[idx + 1];
   if(!toKey) return;
   const required = FUSION_REQUIREMENTS[toKey];
+  const levelReq = FUSION_LEVEL_REQ[toKey];
   if(fusionTierCount(e, fromKey) < required) return;
+  if(levelReq && e.level < levelReq){
+    toast('Niveau insuffisant', `Il faut être niveau ${levelReq} pour fusionner vers ${FUSION_TIERS[toKey].label}.`);
+    return;
+  }
   if(fromKey === 'base') e.count -= required; else e.fusion[fromKey] -= required;
   e.fusion[toKey] += 1;
   save();
@@ -1080,7 +1175,8 @@ function computeEffectiveStats(charId){
     if(itemObj){
       const tpl = ITEMS.find(i => i.id === itemObj.templateId);
       if(tpl){
-        Object.keys(tpl.bonus).forEach(k => { stats[k] = (stats[k] || 0) + tpl.bonus[k]; });
+        const upgradeMult = 1 + (itemObj.upgrade || 0) * 0.15;
+        Object.keys(tpl.bonus).forEach(k => { stats[k] = (stats[k] || 0) + Math.round(tpl.bonus[k] * upgradeMult); });
       }
     }
   });
@@ -1140,6 +1236,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if(btn.dataset.tab === 'collection') renderGrid();
     if(btn.dataset.tab === 'shop') renderShop();
     if(btn.dataset.tab === 'quests') renderQuests();
+    if(btn.dataset.tab === 'donjon') renderDungeonPicker();
   });
 });
 
@@ -1148,6 +1245,10 @@ function renderHeader(){
   document.getElementById('tokenCount').textContent = state.tokens;
   document.getElementById('openBtn').disabled = state.tokens <= 0;
   document.getElementById('totalEssence').textContent = totalEssence();
+  document.getElementById('holyWaterCount').textContent = state.holyWater;
+  const specialBtn = document.getElementById('specialOpenBtn');
+  if(specialBtn) specialBtn.disabled = state.tokens < 50;
+  if(typeof renderGamepass === 'function') renderGamepass();
 }
 
 /* ====================== BOITES ====================== */
@@ -1213,6 +1314,124 @@ document.getElementById('earnBtn').addEventListener('click', (e) => {
     e.target.textContent = '+ Gagner un jeton';
   }, 1200);
 });
+
+/* ====================== GAMEPASS & OUVERTURE MULTIPLE ====================== */
+function countCharsAtLevel(lvl){
+  return Object.values(state.collection).filter(e => e.count > 0 && e.level >= lvl).length;
+}
+function hasS67Fusion(){
+  return Object.values(state.collection).some(e => e.fusion && e.fusion.s67 > 0);
+}
+const GAMEPASS = {
+  x3:  { n:3,  cost:250,  reqText:'Avoir 3 personnages niveau 5',        check: () => countCharsAtLevel(5)  >= 3 },
+  x5:  { n:5,  cost:750,  reqText:'Avoir 3 personnages niveau 15',       check: () => countCharsAtLevel(15) >= 3 },
+  x10: { n:10, cost:2500, reqText:'Avoir 1 personnage avec la fusion 67', check: () => hasS67Fusion() },
+};
+
+function buyGamepass(key){
+  const gp = GAMEPASS[key];
+  if(state.gamepass[key]) return;
+  if(!gp.check()){ toast('Condition non remplie', gp.reqText); return; }
+  if(state.tokens < gp.cost){ toast('Pas assez de jetons', `Il faut ${gp.cost} jetons.`); return; }
+  state.tokens -= gp.cost;
+  state.gamepass[key] = true;
+  save();
+  renderHeader();
+  renderGamepass();
+  toast('Gamepass débloqué', `Ouverture ${gp.n} par ${gp.n} disponible !`);
+}
+
+function renderGamepass(){
+  const grid = document.getElementById('gamepassGrid');
+  if(!grid) return;
+  grid.innerHTML = Object.keys(GAMEPASS).map(key => {
+    const gp = GAMEPASS[key];
+    const owned = state.gamepass[key];
+    const ok = gp.check();
+    return `<div class="item-card">
+      <span class="icon">🎫</span>
+      <div class="name">Gamepass x${gp.n}</div>
+      <div class="bonus">${gp.reqText}</div>
+      <div class="price">${gp.cost} jetons</div>
+      <button class="cta blue gp-buy" data-key="${key}" ${(owned || !ok || state.tokens < gp.cost) ? 'disabled' : ''}>${owned ? 'Débloqué' : 'Débloquer'}</button>
+    </div>`;
+  }).join('');
+  grid.querySelectorAll('.gp-buy').forEach(btn => {
+    btn.addEventListener('click', () => buyGamepass(btn.dataset.key));
+  });
+
+  const row = document.getElementById('multiOpenRow');
+  row.innerHTML = Object.keys(GAMEPASS).map(key => {
+    const gp = GAMEPASS[key];
+    if(!state.gamepass[key]) return '';
+    return `<button class="cta multi-open-btn" data-n="${gp.n}" ${state.tokens < gp.n ? 'disabled' : ''}>Ouvrir ${gp.n} jetons (x${gp.n})</button>`;
+  }).join('');
+  row.querySelectorAll('.multi-open-btn').forEach(btn => {
+    btn.addEventListener('click', () => openMultiBox(parseInt(btn.dataset.n, 10)));
+  });
+}
+
+function openMultiBox(n){
+  if(state.tokens < n) return;
+  state.tokens -= n;
+  const results = [];
+  for(let i = 0; i < n; i++){
+    const character = pickCharacter();
+    const e = ensureEntry(character.id);
+    e.count++;
+    results.push(character);
+  }
+  state.counters.boxesOpened += n;
+  save();
+  renderHeader();
+  renderQuests();
+  renderGamepass();
+  showMultiReveal(results);
+}
+
+function showMultiReveal(results){
+  const list = document.getElementById('multiRevealList');
+  list.innerHTML = results.map(c => `
+    <div class="picker-item" style="cursor:default;">
+      <span class="icon" style="color:${RARITY_COLOR[c.rarity]}">${c.icon}</span>
+      <div class="info">
+        <div class="n">${c.name}</div>
+        <div class="b" style="color:${RARITY_COLOR[c.rarity]}">${RARITY_LABEL[c.rarity]}</div>
+      </div>
+    </div>`).join('');
+  document.getElementById('multiRevealBackdrop').classList.add('show');
+}
+document.getElementById('multiRevealCloseBtn').addEventListener('click', () => {
+  document.getElementById('multiRevealBackdrop').classList.remove('show');
+});
+document.getElementById('multiRevealBackdrop').addEventListener('click', (ev) => {
+  if(ev.target.id === 'multiRevealBackdrop') ev.target.classList.remove('show');
+});
+
+/* ====================== BOÎTE SPÉCIALE (Allah / Uzu) ====================== */
+function openSpecialBox(){
+  if(state.tokens < 50) return;
+  state.tokens -= 50;
+  renderHeader();
+  const box = document.getElementById('specialBox');
+  document.getElementById('specialOpenBtn').disabled = true;
+  box.classList.add('shaking');
+  setTimeout(() => {
+    box.classList.remove('shaking');
+    const roll = Math.random() * 100;
+    const character = CHARACTERS.find(c => c.id === (roll < 0.01 ? 'Allah' : 'uzu'));
+    const e = ensureEntry(character.id);
+    e.count++;
+    state.counters.boxesOpened++;
+    save();
+    showReveal(character);
+    renderHeader();
+    renderQuests();
+    document.getElementById('specialOpenBtn').disabled = state.tokens < 50;
+  }, 900);
+}
+document.getElementById('specialOpenBtn').addEventListener('click', openSpecialBox);
+document.getElementById('specialBoxWrap').addEventListener('click', openSpecialBox);
 
 /* ====================== COLLECTION ====================== */
 function renderGrid(){
@@ -1289,6 +1508,7 @@ function renderCharModal(){
   const cost = essenceBoxCost(c.id);
   const allDone = e.unlocked.length >= VARIANTS[c.id].length;
   document.getElementById('cmEssenceCount').textContent = e.essence;
+  document.getElementById('cmConvertEssenceBtn').disabled = e.essence <= 0;
   document.getElementById('cmEssenceCost').textContent = allDone ? 'toutes débloquées' : ('coût: ' + cost);
   const boxBtn = document.getElementById('cmEssenceBoxBtn');
   boxBtn.disabled = allDone || e.essence < cost;
@@ -1355,14 +1575,16 @@ function renderFusionBlock(charId){
   container.innerHTML = rows.map(r => {
     const tierInfo = FUSION_TIERS[r.to];
     const required = FUSION_REQUIREMENTS[r.to];
-    const canFuse = r.fromCount >= required;
+    const levelReq = FUSION_LEVEL_REQ[r.to];
+    const levelOk = e.level >= levelReq;
+    const canFuse = r.fromCount >= required && levelOk;
     const canActivate = r.toCount >= 1;
     const isActive = e.activeTier === r.to;
     return `<div class="fusion-row ${isActive ? 'active-tier' : ''}" data-to="${r.to}" data-from="${r.from}">
       <span class="f-icon" style="color:${tierInfo.color}">${tierInfo.icon}</span>
       <div class="f-info">
         <div class="f-name">${tierInfo.label} <span class="mono" style="color:var(--essence)">+${Math.round((tierInfo.mult-1)*100)}%</span></div>
-        <div class="f-count">possédés : ${r.toCount} · nécessite ${required}× ${r.fromLabel} (dispo : ${r.fromCount})</div>
+        <div class="f-count">possédés : ${r.toCount} · nécessite ${required}× ${r.fromLabel} (dispo : ${r.fromCount}) · niveau requis : <span style="color:${levelOk ? 'var(--essence)' : 'var(--blood)'}">${levelReq} (actuel : ${e.level})</span></div>
       </div>
       <div class="f-btns">
         <button class="ghost small fuse-btn" ${canFuse ? '' : 'disabled'}>Fusionner</button>
@@ -1392,6 +1614,18 @@ document.getElementById('charModalBackdrop').addEventListener('click', (ev) => {
   if(ev.target.id === 'charModalBackdrop') ev.target.classList.remove('show');
 });
 
+document.getElementById('cmConvertEssenceBtn').addEventListener('click', () => {
+  if(!currentModalCharId) return;
+  const e = ensureEntry(currentModalCharId);
+  if(e.essence <= 0) return;
+  const converted = e.essence;
+  state.holyWater += converted;
+  e.essence = 0;
+  save();
+  renderHeader();
+  renderCharModal();
+  toast('Essence convertie', `+${converted} eau bénite`);
+});
 document.getElementById('cmEssenceBoxBtn').addEventListener('click', () => {
   if(!currentModalCharId) return;
   openEssenceBox(currentModalCharId);
@@ -1538,6 +1772,25 @@ function buyItem(templateId){
   toast('Objet acheté', tpl.name + ' rejoint ton sac.');
 }
 
+function equipUpgradeCost(upgradeLevel){
+  return { holyWater: 5 * (upgradeLevel + 1), tokens: 20 * (upgradeLevel + 1) };
+}
+
+function upgradeItem(instanceId){
+  const it = state.items.find(x => x.instanceId === instanceId);
+  if(!it) return;
+  const lvl = it.upgrade || 0;
+  const cost = equipUpgradeCost(lvl);
+  if(state.holyWater < cost.holyWater || state.tokens < cost.tokens) return;
+  state.holyWater -= cost.holyWater;
+  state.tokens -= cost.tokens;
+  it.upgrade = lvl + 1;
+  save();
+  renderHeader();
+  renderShop();
+  toast('Équipement amélioré', `Niveau +${it.upgrade}`);
+}
+
 function renderBag(){
   const list = document.getElementById('bagList');
   list.innerHTML = '';
@@ -1547,10 +1800,16 @@ function renderBag(){
   }
   state.items.forEach(it => {
     const tpl = ITEMS.find(i => i.id === it.templateId);
-    const bonusText = Object.entries(tpl.bonus).map(([k,v]) => `+${v} ${k.toUpperCase()}`).join(' ');
+    const lvl = it.upgrade || 0;
+    const upgradeMult = 1 + lvl * 0.15;
+    const bonusText = Object.entries(tpl.bonus).map(([k,v]) => `+${Math.round(v*upgradeMult)} ${k.toUpperCase()}`).join(' ');
+    const cost = equipUpgradeCost(lvl);
+    const canUpgrade = state.holyWater >= cost.holyWater && state.tokens >= cost.tokens;
     const div = document.createElement('div');
     div.className = 'bag-item';
-    div.innerHTML = `<span class="icon">${tpl.icon}</span><div class="name">${tpl.name}</div><div class="bonus">${bonusText}</div>`;
+    div.innerHTML = `<span class="icon">${tpl.icon}</span><div class="name">${tpl.name}${lvl > 0 ? ` <span class="mono" style="color:var(--essence)">+${lvl}</span>` : ''}</div><div class="bonus">${bonusText}</div>
+      <button class="ghost small upgrade-btn" style="margin-top:6px; width:100%;" ${canUpgrade ? '' : 'disabled'}>Améliorer (${cost.holyWater} eau bénite + ${cost.tokens} jetons)</button>`;
+    div.querySelector('.upgrade-btn').addEventListener('click', () => upgradeItem(it.instanceId));
     list.appendChild(div);
   });
 }
@@ -1913,6 +2172,234 @@ function endBattle(playerWon){
 
 document.getElementById('atkBtn').addEventListener('click', () => playerAction('attack'));
 document.getElementById('skillBtn').addEventListener('click', () => playerAction('skill'));
+
+/* ====================== DONJON : EMPIRE FLOTTÉ 7 ====================== */
+// 7 ennemis fixes à enchaîner sans régénération de PV entre chaque combat.
+const DUNGEON_ENEMIES = [
+  { name:'Yassin', icon:'🥷',  base:{hp:140, atk:20, def:12, spd:14}, skill:{name:'Coup sournois', mult:1.6} },
+  { name:'Ezare',   icon:'🌪️', base:{hp:160, atk:24, def:14, spd:16}, skill:{name:'Tempête', mult:1.7} },
+  { name:'Sung',    icon:'🐉',  base:{hp:180, atk:26, def:16, spd:15}, skill:{name:'Souffle du dragon', mult:1.8} },
+  { name:'Biggy',   icon:'🦣',  base:{hp:220, atk:22, def:20, spd:10}, skill:{name:'Charge massive', mult:1.7} },
+  { name:'Uzu',     icon:'🐋',  base:{hp:200, atk:28, def:16, spd:18}, skill:{name:'Vague destructrice', mult:1.9} },
+  { name:'Sabri',   icon:'🦂',  base:{hp:210, atk:30, def:15, spd:17}, skill:{name:'Piqûre mortelle', mult:2.0} },
+  { name:'Anis',    icon:'🌸',  base:{hp:280, atk:36, def:22, spd:20}, skill:{name:'Même pas de ping pour l Aid', mult:2.3}, boss:true },
+];
+const DUNGEON_REWARD_PER_ENEMY = 6;
+const DUNGEON_CLEAR_BONUS = { tokens:60, essence:20 };
+
+let dungeonFighterId = null;
+let dungeonRun = null; // { charId, stats, hp, skillReady, index, enemy:{...} }
+
+function renderDungeonPicker(){
+  const picker = document.getElementById('donjonPicker');
+  const owned = CHARACTERS.filter(c => state.collection[c.id] && state.collection[c.id].count > 0);
+  document.getElementById('donjonSetup').style.display = 'block';
+  document.getElementById('donjonStage').style.display = 'none';
+
+  if(owned.length === 0){
+    picker.innerHTML = `<div class="empty-note" style="grid-column:1/-1;">Tu n'as encore aucun combattant. Va ouvrir une boite d'abord.</div>`;
+    document.getElementById('donjonStartBtn').disabled = true;
+    return;
+  }
+
+  picker.innerHTML = '';
+  owned.forEach(c => {
+    const e = ensureEntry(c.id);
+    const need = xpToNext(e.level);
+    const pct = Math.min(100, Math.round((e.xp / need) * 100));
+    const div = document.createElement('div');
+    div.className = 'pick-card' + (dungeonFighterId === c.id ? ' selected' : '');
+    div.innerHTML = `
+      <span class="icon">${c.icon}</span>
+      <div class="name">${c.name}</div>
+      <div class="lvl">Niv. ${e.level}</div>
+      <div class="mini-xp"><div class="mini-xp-fill" style="width:${pct}%"></div></div>
+    `;
+    div.addEventListener('click', () => {
+      dungeonFighterId = c.id;
+      renderDungeonPicker();
+    });
+    picker.appendChild(div);
+  });
+  document.getElementById('donjonStartBtn').disabled = !dungeonFighterId;
+}
+
+document.getElementById('donjonStartBtn').addEventListener('click', startDungeon);
+document.getElementById('donjonQuitBtn').addEventListener('click', () => {
+  dungeonRun = null;
+  dungeonFighterId = null;
+  renderDungeonPicker();
+});
+
+function startDungeon(){
+  const playerChar = CHARACTERS.find(c => c.id === dungeonFighterId);
+  const pStats = computeEffectiveStats(playerChar.id);
+  dungeonRun = { charId: playerChar.id, stats: pStats, hp: pStats.hp, skillReady:true, index:0, enemy:null };
+
+  document.getElementById('donjonSetup').style.display = 'none';
+  document.getElementById('donjonStage').style.display = 'block';
+  document.getElementById('donjonLog').innerHTML = '';
+  addDungeonLog('Tu entres dans l\'Empire flotté 7. Aucune régénération entre les ennemis !', 'sys');
+  spawnDungeonEnemy();
+}
+
+function spawnDungeonEnemy(){
+  const idx = dungeonRun.index;
+  const tpl = DUNGEON_ENEMIES[idx];
+  const scale = 1 + idx * 0.12;
+  const eStats = {
+    hp: Math.round(tpl.base.hp * scale),
+    atk: Math.round(tpl.base.atk * scale),
+    def: Math.round(tpl.base.def * scale),
+    spd: Math.round(tpl.base.spd * scale),
+  };
+  dungeonRun.enemy = { tpl, stats: eStats, hp: eStats.hp, skillReady:true };
+
+  const playerChar = CHARACTERS.find(c => c.id === dungeonRun.charId);
+  document.getElementById('donjonEnemyCount').textContent = `Ennemi ${idx+1} / ${DUNGEON_ENEMIES.length}${tpl.boss ? ' — BOSS' : ''}`;
+  document.getElementById('dpIcon').textContent = playerChar.icon;
+  document.getElementById('dpIcon').style.color = RARITY_COLOR[playerChar.rarity];
+  document.getElementById('dpName').textContent = playerChar.name;
+  document.getElementById('deIcon').textContent = tpl.icon;
+  document.getElementById('deIcon').style.color = tpl.boss ? 'var(--blood)' : 'var(--muted)';
+  document.getElementById('deName').textContent = tpl.name + (tpl.boss ? ' (boss)' : '');
+  document.getElementById('donjonActionZone').style.display = 'flex';
+  document.getElementById('donjonResultZone').innerHTML = '';
+  document.getElementById('dAtkBtn').disabled = false;
+  document.getElementById('dSkillBtn').disabled = !dungeonRun.skillReady;
+  updateDungeonHpBars();
+  addDungeonLog(`${tpl.name} se dresse devant toi !`, 'sys');
+}
+
+function updateDungeonHpBars(){
+  const p = dungeonRun, e = dungeonRun.enemy;
+  const pPct = Math.max(0, Math.round((p.hp / p.stats.hp) * 100));
+  const ePct = Math.max(0, Math.round((e.hp / e.stats.hp) * 100));
+  document.getElementById('dpHpBar').style.width = pPct + '%';
+  document.getElementById('deHpBar').style.width = ePct + '%';
+  document.getElementById('dpHpText').textContent = `${Math.max(0,p.hp)} / ${p.stats.hp} PV`;
+  document.getElementById('deHpText').textContent = `${Math.max(0,e.hp)} / ${e.stats.hp} PV`;
+}
+
+function addDungeonLog(text, cls){
+  const log = document.getElementById('donjonLog');
+  const line = document.createElement('div');
+  if(cls) line.className = cls;
+  line.textContent = text;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+document.getElementById('dAtkBtn').addEventListener('click', () => dungeonAction('attack'));
+document.getElementById('dSkillBtn').addEventListener('click', () => dungeonAction('skill'));
+
+function dungeonAction(type){
+  if(!dungeonRun || !dungeonRun.enemy) return;
+  document.getElementById('donjonActionZone').querySelectorAll('button').forEach(b => b.disabled = true);
+
+  const p = dungeonRun, e = dungeonRun.enemy;
+  const playerChar = CHARACTERS.find(c => c.id === p.charId);
+  const playerFirst = p.stats.spd >= e.stats.spd;
+
+  const doPlayerHit = () => {
+    let mult = 1, label = 'attaque';
+    if(type === 'skill' && p.skillReady){
+      mult = playerChar.skill.mult;
+      label = playerChar.skill.name;
+      p.skillReady = false;
+    }
+    const dmg = computeDamage(p.stats, e.stats, mult);
+    e.hp -= dmg;
+    addDungeonLog(`${playerChar.name} utilise ${label} -> ${dmg} degats`, 'me');
+    updateDungeonHpBars();
+  };
+  const doEnemyHit = () => {
+    if(e.hp <= 0) return;
+    let mult = 1, label = 'attaque';
+    if(e.skillReady && Math.random() < 0.4){
+      mult = e.tpl.skill.mult;
+      label = e.tpl.skill.name;
+      e.skillReady = false;
+    }
+    const dmg = computeDamage(e.stats, p.stats, mult);
+    p.hp -= dmg;
+    addDungeonLog(`${e.tpl.name} utilise ${label} -> ${dmg} degats`, 'foe');
+    updateDungeonHpBars();
+  };
+  const checkEnd = () => {
+    if(e.hp <= 0){ dungeonEnemyDown(); return true; }
+    if(p.hp <= 0){ dungeonRunOver(false); return true; }
+    return false;
+  };
+
+  if(playerFirst){
+    doPlayerHit();
+    if(checkEnd()) return;
+    setTimeout(() => {
+      doEnemyHit();
+      if(checkEnd()) return;
+      reEnableDungeonActions();
+    }, 500);
+  } else {
+    setTimeout(() => {
+      doEnemyHit();
+      if(checkEnd()) return;
+      doPlayerHit();
+      if(checkEnd()) return;
+      reEnableDungeonActions();
+    }, 400);
+  }
+}
+
+function reEnableDungeonActions(){
+  document.getElementById('dAtkBtn').disabled = false;
+  document.getElementById('dSkillBtn').disabled = !dungeonRun.skillReady;
+}
+
+function dungeonEnemyDown(){
+  const p = dungeonRun;
+  const tpl = p.enemy.tpl;
+  addDungeonLog(`${tpl.name} est K.O. !`, 'sys');
+  state.tokens += DUNGEON_REWARD_PER_ENEMY * (tpl.boss ? 3 : 1);
+  save();
+  renderHeader();
+
+  p.index++;
+  // IMPORTANT : pas de régénération des PV du joueur entre deux ennemis.
+  if(p.index >= DUNGEON_ENEMIES.length){
+    dungeonRunOver(true);
+    return;
+  }
+  document.getElementById('donjonActionZone').style.display = 'none';
+  document.getElementById('donjonResultZone').innerHTML = `<div class="result-badge win">${tpl.name} VAINCU</div>
+    <div class="result-rewards">+<b>${DUNGEON_REWARD_PER_ENEMY * (tpl.boss?3:1)}</b> jetons · PV restants conservés pour le prochain ennemi</div>
+    <div style="text-align:center;"><button class="cta blue" id="dungeonNextBtn">Affronter le prochain ennemi</button></div>`;
+  document.getElementById('dungeonNextBtn').addEventListener('click', spawnDungeonEnemy);
+}
+
+function dungeonRunOver(cleared){
+  document.getElementById('donjonActionZone').style.display = 'none';
+  const zone = document.getElementById('donjonResultZone');
+  const c = CHARACTERS.find(x => x.id === dungeonRun.charId);
+  if(cleared){
+    state.tokens += DUNGEON_CLEAR_BONUS.tokens;
+    const e = ensureEntry(c.id);
+    e.essence += DUNGEON_CLEAR_BONUS.essence;
+    state.dungeon.bestClear = Math.max(state.dungeon.bestClear || 0, 1);
+    save();
+    renderHeader();
+    addDungeonLog(`Anis est K.O. ! L'Empire flotté 7 est vaincu !`, 'sys');
+    zone.innerHTML = `<div class="result-badge win">DONJON TERMINÉ</div>
+      <div class="result-rewards">+<b>${DUNGEON_CLEAR_BONUS.tokens}</b> jetons · +<b style="color:var(--essence)">${DUNGEON_CLEAR_BONUS.essence}</b> essence pour ${c.name}</div>`;
+  } else {
+    addDungeonLog(`${c.name} est K.O. face à ${dungeonRun.enemy.tpl.name}.`, 'sys');
+    zone.innerHTML = `<div class="result-badge lose">DEFAITE — Ennemi ${dungeonRun.index+1}/${DUNGEON_ENEMIES.length}</div>
+      <div class="result-rewards">Tu conserves les jetons déjà gagnés sur cette run.</div>`;
+  }
+  renderGrid();
+  renderQuests();
+  dungeonRun = null;
+}
 
 /* ====================== QUETES ====================== */
 function assignQuests(){
