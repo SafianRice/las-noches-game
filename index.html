@@ -960,7 +960,7 @@ const CHARACTERS = [
   { id:'roi67', name:'Allah', icon:'👑', rarity:'mythique', flavor:"Seigneur de la terre comme des cieux",
     base:{hp:666, atk:100, def:100, spd:100}, skill:{name:'Colère divine', mult:3.2} },
 
-  { id:'uzu', name:'Uzu', icon:'🐋', rarity:'mythique', flavor:"Esclave de la flotte.",
+  { id:'uzu', name:'Uzu', icon:'🐋', rarity:'commun', flavor:"Esclave de la flotte.",
     base:{hp:1, atk:1, def:1, spd:1}, skill:{name:'Soumission lunaire', mult:1.9} },
 ];
 
@@ -974,7 +974,12 @@ const VARIANT_NAMES = {
   saka: ["Sakator", "Sanatorium", "Météorologue de la br"],
   nexis: ["Nexigloo", "Bidoof", "Nexou", "God Nexis", "Gérant staff Nexis"],
   anis: ["Fils de pute", " Anis III", "Allah"],
-  azzno: ["Azznoir", "Azzjoie", "Azzrock", "SINJ SUCEUR"]
+  azzno: ["Azznoir", "Azzjoie", "Azzrock", "SINJ SUCEUR"],
+  // Allah et Uzu n'ont pas de formes/variantes (personnages exclusifs à la Boîte spéciale).
+  // Sans ces lignes, VARIANTS['roi67'] / VARIANTS['uzu'] valaient undefined et faisaient planter
+  // renderGrid() dès qu'on possédait l'un des deux, ce qui empêchait Uzu de s'afficher dans la collection.
+  roi67: [],
+  uzu: []
 };
 
 // transforme les listes de noms en objets {id, name, hue, rarity} pour donner une teinte
@@ -1252,15 +1257,19 @@ function renderHeader(){
 }
 
 /* ====================== BOITES ====================== */
+// Personnages jamais tirables dans les boîtes normales (exclusifs à la Boîte spéciale).
+const SPECIAL_BOX_ONLY_IDS = ['roi67', 'uzu'];
+
 function pickCharacter(){
-  const total = CHARACTERS.reduce((s,c) => s + RARITY_WEIGHT[c.rarity], 0);
+  const pool = CHARACTERS.filter(c => !SPECIAL_BOX_ONLY_IDS.includes(c.id));
+  const total = pool.reduce((s,c) => s + RARITY_WEIGHT[c.rarity], 0);
   let roll = Math.random() * total;
-  for(const c of CHARACTERS){
+  for(const c of pool){
     const w = RARITY_WEIGHT[c.rarity];
     if(roll < w) return c;
     roll -= w;
   }
-  return CHARACTERS[0];
+  return pool[0];
 }
 
 function openBox(){
@@ -1419,7 +1428,7 @@ function openSpecialBox(){
   setTimeout(() => {
     box.classList.remove('shaking');
     const roll = Math.random() * 100;
-    const character = CHARACTERS.find(c => c.id === (roll < 0.01 ? 'Allah' : 'uzu'));
+    const character = CHARACTERS.find(c => c.id === (roll < 0.01 ? 'roi67' : 'uzu'));
     const e = ensureEntry(character.id);
     e.count++;
     state.counters.boxesOpened++;
@@ -1687,10 +1696,14 @@ function openEquipPicker(charId, slot){
   list.innerHTML = '';
 
   if(e.equip[slot]){
-    const tpl = ITEMS.find(i => i.id === e.equip[slot].templateId);
+    const equippedIt = e.equip[slot];
+    const tpl = ITEMS.find(i => i.id === equippedIt.templateId);
+    const eqLvl = equippedIt.upgrade || 0;
+    const eqUpgradeMult = 1 + eqLvl * 0.15;
+    const eqBonusText = Object.entries(tpl.bonus).map(([k,v]) => `+${Math.round(v*eqUpgradeMult)} ${k.toUpperCase()}`).join(' ');
     const row = document.createElement('div');
     row.className = 'picker-item';
-    row.innerHTML = `<span class="icon">${tpl.icon}</span><div class="info"><div class="n">Retirer ${tpl.name}</div><div class="b">renvoie l'objet dans le sac</div></div>`;
+    row.innerHTML = `<span class="icon">${tpl.icon}</span><div class="info"><div class="n">Retirer ${tpl.name}${eqLvl > 0 ? ` <span class="mono" style="color:var(--essence)">+${eqLvl}</span>` : ''} (équipé)</div><div class="b">${eqBonusText} — renvoie l'objet dans le sac</div></div>`;
     row.addEventListener('click', () => {
       state.items.push(e.equip[slot]);
       e.equip[slot] = null;
@@ -1712,12 +1725,17 @@ function openEquipPicker(charId, slot){
     note.textContent = "Aucun objet de ce type dans ton sac. Va en acheter à la Boutique.";
     list.appendChild(note);
   } else {
+    // Trie du plus fort au plus faible (niveau d'amélioration décroissant) pour repérer
+    // facilement le meilleur exemplaire quand on en a plusieurs du même objet.
+    available.sort((a, b) => (b.upgrade || 0) - (a.upgrade || 0));
     available.forEach(it => {
       const tpl = ITEMS.find(i => i.id === it.templateId);
-      const bonusText = Object.entries(tpl.bonus).map(([k,v]) => `+${v} ${k.toUpperCase()}`).join(' ');
+      const lvl = it.upgrade || 0;
+      const upgradeMult = 1 + lvl * 0.15;
+      const bonusText = Object.entries(tpl.bonus).map(([k,v]) => `+${Math.round(v*upgradeMult)} ${k.toUpperCase()}`).join(' ');
       const row = document.createElement('div');
       row.className = 'picker-item';
-      row.innerHTML = `<span class="icon">${tpl.icon}</span><div class="info"><div class="n">${tpl.name}</div><div class="b">${bonusText}</div></div>`;
+      row.innerHTML = `<span class="icon">${tpl.icon}</span><div class="info"><div class="n">${tpl.name}${lvl > 0 ? ` <span class="mono" style="color:var(--essence)">+${lvl}</span>` : ''}</div><div class="b">${bonusText}</div></div>`;
       row.addEventListener('click', () => {
         if(e.equip[slot]) state.items.push(e.equip[slot]);
         state.items = state.items.filter(x => x.instanceId !== it.instanceId);
@@ -2127,10 +2145,9 @@ function endBattle(playerWon){
 
     const boost = battle.enemy.boost;
     const enemyChar = battle.enemy.char;
-    const baseWild = wildStatsFor(enemyChar);
-    const baseTotal = baseWild.hp + baseWild.atk + baseWild.def + baseWild.spd;
-    const fightTotal = battle.enemy.stats.hp + battle.enemy.stats.atk + battle.enemy.stats.def + battle.enemy.stats.spd;
-    const strengthRatio = baseTotal > 0 ? (fightTotal / baseTotal) : 1;
+    // Le ratio de force ne dépend que du niveau fixe de la difficulté (pas du boost aléatoire de
+    // l'ennemi), pour que l'XP gagnée soit prévisible et ne varie plus au hasard d'un combat à l'autre.
+    const strengthRatio = 1 + (diffSettings.enemyLevel - 1) * 0.045;
     const flawless = battle.player.hp >= battle.player.stats.hp;
 
     let xpGain = Math.round(
@@ -2176,13 +2193,13 @@ document.getElementById('skillBtn').addEventListener('click', () => playerAction
 /* ====================== DONJON : EMPIRE FLOTTÉ 7 ====================== */
 // 7 ennemis fixes à enchaîner sans régénération de PV entre chaque combat.
 const DUNGEON_ENEMIES = [
-  { name:'Yassin', icon:'🥷',  base:{hp:140, atk:20, def:12, spd:14}, skill:{name:'Coup sournois', mult:1.6} },
-  { name:'Ezare',   icon:'🌪️', base:{hp:160, atk:24, def:14, spd:16}, skill:{name:'Tempête', mult:1.7} },
-  { name:'Sung',    icon:'🐉',  base:{hp:180, atk:26, def:16, spd:15}, skill:{name:'Souffle du dragon', mult:1.8} },
-  { name:'Biggy',   icon:'🦣',  base:{hp:220, atk:22, def:20, spd:10}, skill:{name:'Charge massive', mult:1.7} },
-  { name:'Uzu',     icon:'🐋',  base:{hp:200, atk:28, def:16, spd:18}, skill:{name:'Vague destructrice', mult:1.9} },
-  { name:'Sabri',   icon:'🦂',  base:{hp:210, atk:30, def:15, spd:17}, skill:{name:'Piqûre mortelle', mult:2.0} },
-  { name:'Anis',    icon:'🌸',  base:{hp:280, atk:36, def:22, spd:20}, skill:{name:'Même pas de ping pour l Aid', mult:2.3}, boss:true },
+  { name:'Yassin', icon:'😈',  base:{hp:850, atk:35, def:12, spd:14}, skill:{name:'Coup sournois', mult:1.6} },
+  { name:'Ezare',   icon:'🌪️', base:{hp:1300, atk:50, def:14, spd:16}, skill:{name:'Tempête', mult:1.7} },
+  { name:'Sung',    icon:'🐉',  base:{hp:2500, atk:80, def:50, spd:15}, skill:{name:'Souffle du dragon', mult:1.8} },
+  { name:'Biggy',   icon:'🦣',  base:{hp:3500, atk:100, def:50, spd:100}, skill:{name:'Charge massive', mult:1.7} },
+  { name:'Uzu',     icon:'🐋',  base:{hp:5000, atk:150, def:16, spd:18}, skill:{name:'Vague destructrice', mult:1.9} },
+  { name:'Sabri',   icon:'🦂',  base:{hp:6700, atk:200, def:15, spd:17}, skill:{name:'Piqûre mortelle', mult:2.0} },
+  { name:'Anis',    icon:'🌸',  base:{hp:10000, atk:300, def:150, spd:20}, skill:{name:'Même pas de ping pour l Aid', mult:2.3}, boss:true },
 ];
 const DUNGEON_REWARD_PER_ENEMY = 6;
 const DUNGEON_CLEAR_BONUS = { tokens:60, essence:20 };
@@ -2246,7 +2263,9 @@ function startDungeon(){
 function spawnDungeonEnemy(){
   const idx = dungeonRun.index;
   const tpl = DUNGEON_ENEMIES[idx];
-  const scale = 1 + idx * 0.12;
+  // Donjon nettement plus difficile : montée en puissance plus forte à chaque étage,
+  // et stats de base des ennemis relevées de 20%.
+  const scale = (1 + idx * 0.28) * 1.2;
   const eStats = {
     hp: Math.round(tpl.base.hp * scale),
     atk: Math.round(tpl.base.atk * scale),
@@ -2316,7 +2335,7 @@ function dungeonAction(type){
   const doEnemyHit = () => {
     if(e.hp <= 0) return;
     let mult = 1, label = 'attaque';
-    if(e.skillReady && Math.random() < 0.4){
+    if(e.skillReady && Math.random() < 0.6){
       mult = e.tpl.skill.mult;
       label = e.tpl.skill.name;
       e.skillReady = false;
