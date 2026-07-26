@@ -584,6 +584,46 @@
   .quest-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; gap:10px; }
   button.small-cta{ padding:9px 14px; font-size:11px; }
 
+  /* ====================== BADGES ====================== */
+  .badges-wrap{ max-width:900px; margin:0 auto; }
+  .badges-summary{
+    display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:26px;
+  }
+  .badge-rarity-block{ margin-bottom:30px; }
+  .badge-rarity-title{
+    font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+    margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid var(--line-soft);
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .badge-rarity-count{ font-size:11px; opacity:.7; }
+  .badge-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:12px; }
+  .badge-card{
+    position:relative;
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px;
+    display:flex; flex-direction:column; gap:8px;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .badge-card.unlocked{ box-shadow:0 0 0 1px rgba(255,255,255,.02) inset; }
+  .badge-card.claimed{ opacity:.55; }
+  .badge-card.ready{ transform:translateY(-2px); }
+  .badge-top{ display:flex; align-items:center; gap:10px; }
+  .badge-icon{
+    width:42px; height:42px; min-width:42px; border-radius:10px;
+    display:flex; align-items:center; justify-content:center; font-size:20px;
+    background:var(--panel-2); border:1px solid var(--line);
+  }
+  .badge-name{ font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:.02em; line-height:1.1; }
+  .badge-desc{ font-size:12px; color:var(--muted); line-height:1.4; min-height:32px; }
+  .badge-progress-bg{ height:7px; border-radius:100px; background:var(--panel-2); border:1px solid var(--line); overflow:hidden; }
+  .badge-progress-fill{ height:100%; background:linear-gradient(90deg, var(--reiatsu), #7dfcd4); transition:width .4s ease; }
+  .badge-foot{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:2px; }
+  .badge-progress-text{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); }
+  .badge-claimed-tag{
+    font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--essence);
+  }
+  .badge-reward{ font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); }
+
   .elite-tag{
     display:inline-block; margin-left:6px; font-family:'JetBrains Mono',monospace; font-size:9px;
     letter-spacing:.15em; color:var(--gold); border:1px solid var(--gold); border-radius:100px; padding:2px 8px;
@@ -671,6 +711,7 @@
   <button class="nav-btn" data-tab="shop">Boutique</button>
   <button class="nav-btn" data-tab="quests">Quêtes</button>
   <button class="nav-btn" data-tab="donjon">Donjon</button>
+  <button class="nav-btn" data-tab="badges">Badges</button>
 </div>
 
 <div class="tab active" id="tab-boxes">
@@ -823,6 +864,13 @@
         <button class="ghost" id="donjonQuitBtn">Abandonner / changer de combattant</button>
       </div>
     </div>
+  </div>
+</div>
+
+<div class="tab" id="tab-badges">
+  <div class="badges-wrap">
+    <div class="badges-summary pill mono" id="badgesSummary">0 / 0 badges récupérés</div>
+    <div id="badgesContainer"></div>
   </div>
 </div>
 
@@ -1088,11 +1136,12 @@ const QUEST_POOL = [
 /* ====================== ETAT ====================== */
 const DEFAULT_STATE = {
   tokens:5, collection:{}, items:[], winStreak:0, itemSeq:1, difficulty:'normal',
-  counters:{ wins:0, boxesOpened:0, battles:0, levelUps:0, itemsBought:0, maxStreak:0 },
+  counters:{ wins:0, boxesOpened:0, battles:0, levelUps:0, itemsBought:0, maxStreak:0, questsClaimed:0 },
   quests:[],
   holyWater:0,
   gamepass:{ x3:false, x5:false, x10:false },
-  dungeon:{ bestClear:0 }
+  dungeon:{ bestClear:0 },
+  badges:{}
 };
 function structuredCloneState(o){ return JSON.parse(JSON.stringify(o)); }
 let state = JSON.parse(localStorage.getItem('reiatsu_state_v3') || 'null') || structuredCloneState(DEFAULT_STATE);
@@ -1104,6 +1153,8 @@ function migrateState(){
   if(state.holyWater === undefined) state.holyWater = 0;
   if(state.gamepass === undefined) state.gamepass = { x3:false, x5:false, x10:false };
   if(state.dungeon === undefined) state.dungeon = { bestClear:0 };
+  if(state.badges === undefined) state.badges = {};
+  if(state.counters.questsClaimed === undefined) state.counters.questsClaimed = 0;
 }
 migrateState();
 function save(){ localStorage.setItem('reiatsu_state_v3', JSON.stringify(state)); }
@@ -1144,6 +1195,7 @@ function fuseUp(charId, fromKey){
   toast('Fusion réussie', `Tu obtiens une forme ${FUSION_TIERS[toKey].label} !`);
   renderCharModal();
   renderGrid();
+  checkBadgeNotifications();
 }
 
 function xpToNext(level){ return Math.round(50 * Math.pow(1.17, level - 1)); }
@@ -1242,6 +1294,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if(btn.dataset.tab === 'shop') renderShop();
     if(btn.dataset.tab === 'quests') renderQuests();
     if(btn.dataset.tab === 'donjon') renderDungeonPicker();
+    if(btn.dataset.tab === 'badges') renderBadges();
   });
 });
 
@@ -1292,6 +1345,7 @@ function openBox(){
     renderHeader();
     renderQuests();
     renderGrid();
+    checkBadgeNotifications();
   }, 900);
 }
 
@@ -1788,10 +1842,12 @@ function buyItem(templateId){
   if(state.tokens < tpl.price) return;
   state.tokens -= tpl.price;
   state.items.push({ instanceId: 'it' + (state.itemSeq++), templateId });
+  state.counters.itemsBought = (state.counters.itemsBought || 0) + 1;
   save();
   renderHeader();
   renderShop();
   toast('Objet acheté', tpl.name + ' rejoint ton sac.');
+  checkBadgeNotifications();
 }
 
 function equipUpgradeCost(upgradeLevel){
@@ -1811,6 +1867,7 @@ function upgradeItem(instanceId){
   renderHeader();
   renderShop();
   toast('Équipement amélioré', `Niveau +${it.upgrade}`);
+  checkBadgeNotifications();
 }
 
 function renderBag(){
@@ -2131,6 +2188,7 @@ function awardXP(charId, amount){
   save();
   if(leveledUp){
     toast(`${c.name} passe niveau ${e.level} !`, `+${essenceGained} essence gagnée`);
+    checkBadgeNotifications();
   }
   return { leveledUp, essenceGained };
 }
@@ -2171,6 +2229,7 @@ function endBattle(playerWon){
     save();
     const { leveledUp } = awardXP(c.id, xpGain);
     renderHeader();
+    checkBadgeNotifications();
 
     addLog(`${enemyChar.name}${boost ? ' ' + boost.label.toUpperCase() : ''} est K.O. !`, 'sys');
     addLog(`${c.name} gagne ${xpGain} XP${flawless ? ' (sans dommage, bonus inclus)' : ''}`, 'xp');
@@ -2197,13 +2256,13 @@ document.getElementById('skillBtn').addEventListener('click', () => playerAction
 /* ====================== DONJON : EMPIRE FLOTTÉ 7 ====================== */
 // 7 ennemis fixes à enchaîner sans régénération de PV entre chaque combat.
 const DUNGEON_ENEMIES = [
-  { name:'Yassin', icon:'😈',  base:{hp:500, atk:35, def:12, spd:14}, skill:{name:'Coup sournois', mult:1.6} },
-  { name:'Ezare',   icon:'🌪️', base:{hp:1000, atk:50, def:14, spd:16}, skill:{name:'Tempête', mult:1.7} },
-  { name:'Sung',    icon:'🐉',  base:{hp:1500, atk:60, def:50, spd:15}, skill:{name:'Souffle du dragon', mult:1.8} },
-  { name:'Biggy',   icon:'🦣',  base:{hp:2300, atk:80, def:50, spd:100}, skill:{name:'Charge massive', mult:1.7} },
-  { name:'Uzu',     icon:'🐋',  base:{hp:3000, atk:130, def:16, spd:18}, skill:{name:'Vague destructrice', mult:1.9} },
-  { name:'Sabri',   icon:'🦂',  base:{hp:4000, atk:150, def:15, spd:17}, skill:{name:'Piqûre mortelle', mult:2.0} },
-  { name:'Anis',    icon:'🌸',  base:{hp:5000, atk:190, def:150, spd:20}, skill:{name:'Même pas de ping pour l Aid', mult:2.3}, boss:true },
+  { name:'Yassin', icon:'😈',  base:{hp:850, atk:35, def:12, spd:14}, skill:{name:'Coup sournois', mult:1.6} },
+  { name:'Ezare',   icon:'🌪️', base:{hp:1300, atk:50, def:14, spd:16}, skill:{name:'Tempête', mult:1.7} },
+  { name:'Sung',    icon:'🐉',  base:{hp:2500, atk:80, def:50, spd:15}, skill:{name:'Souffle du dragon', mult:1.8} },
+  { name:'Biggy',   icon:'🦣',  base:{hp:3500, atk:100, def:50, spd:100}, skill:{name:'Charge massive', mult:1.7} },
+  { name:'Uzu',     icon:'🐋',  base:{hp:5000, atk:150, def:16, spd:18}, skill:{name:'Vague destructrice', mult:1.9} },
+  { name:'Sabri',   icon:'🦂',  base:{hp:6700, atk:200, def:15, spd:17}, skill:{name:'Piqûre mortelle', mult:2.0} },
+  { name:'Anis',    icon:'🌸',  base:{hp:10000, atk:300, def:150, spd:20}, skill:{name:'Même pas de ping pour l Aid', mult:2.3}, boss:true },
 ];
 const DUNGEON_REWARD_PER_ENEMY = 6;
 const DUNGEON_CLEAR_BONUS = { tokens:60, essence:20 };
@@ -2414,6 +2473,7 @@ function dungeonRunOver(cleared){
     addDungeonLog(`Anis est K.O. ! L'Empire flotté 7 est vaincu !`, 'sys');
     zone.innerHTML = `<div class="result-badge win">DONJON TERMINÉ</div>
       <div class="result-rewards">+<b>${DUNGEON_CLEAR_BONUS.tokens}</b> jetons · +<b style="color:var(--essence)">${DUNGEON_CLEAR_BONUS.essence}</b> essence pour ${c.name}</div>`;
+    checkBadgeNotifications();
   } else {
     addDungeonLog(`${c.name} est K.O. face à ${dungeonRun.enemy.tpl.name}.`, 'sys');
     zone.innerHTML = `<div class="result-badge lose">DEFAITE — Ennemi ${dungeonRun.index+1}/${DUNGEON_ENEMIES.length}</div>
@@ -2468,9 +2528,11 @@ function renderQuests(){
       if(done && !q.claimed){
         q.claimed = true;
         state.tokens += tpl.reward;
+        state.counters.questsClaimed = (state.counters.questsClaimed || 0) + 1;
         save();
         renderHeader();
         renderQuests();
+        checkBadgeNotifications();
         toast('Quête terminée', '+' + tpl.reward + ' jetons');
       }
     });
@@ -2484,11 +2546,296 @@ document.getElementById('newQuestsBtn').addEventListener('click', () => {
   renderQuests();
 });
 
+/* ====================== BADGES ======================
+   Pour AJOUTER / MODIFIER un badge, il suffit d'éditer le tableau BADGES
+   ci-dessous. Chaque badge est un simple objet :
+
+   {
+     id:       'identifiant_unique',        // ne JAMAIS changer une fois publié (sinon la progression des joueurs est perdue)
+     rarity:   'commun'|'rare'|'epique'|'legendaire'|'mythique',  // détermine la couleur + la section d'affichage
+     icon:     '🏅',                        // emoji affiché sur le badge
+     name:     'Nom affiché',
+     desc:     'Description de la condition à remplir.',
+     reward:   10,                          // jetons donnés quand le joueur clique sur "Récupérer"
+     target:   5,                           // valeur à atteindre
+     progress: () => <nombre actuel>        // fonction qui renvoie la progression actuelle du joueur
+   }
+
+   Le badge est prêt à être récupéré dès que progress() >= target.
+   Pour un badge "oui/non" (ex: posséder toutes les armes), mets simplement
+   target:1 et fais renvoyer 1 ou 0 par progress().
+======================================================= */
+
+// -- Petits utilitaires réutilisés par les conditions de badges --
+function ownsCharacter(charId){
+  const e = state.collection[charId];
+  if(!e) return false;
+  return e.count > 0 || Object.values(e.fusion).some(v => v > 0) || e.activeTier !== 'base';
+}
+function distinctOwnedCharactersCount(){
+  return CHARACTERS.filter(c => ownsCharacter(c.id)).length;
+}
+function countCharactersAtLevel(minLevel){
+  return CHARACTERS.filter(c => ownsCharacter(c.id) && ensureEntry(c.id).level >= minLevel).length;
+}
+// renvoie true si le personnage a DEJA atteint ce palier de fusion au moins une fois
+// (même si les doublons ont depuis été consommés pour fusionner plus haut dans la chaîne)
+function hasReachedFusionTier(charId, tierKey){
+  const e = state.collection[charId];
+  if(!e) return false;
+  const idx = FUSION_CHAIN.indexOf(tierKey);
+  for(let i = idx; i < FUSION_CHAIN.length; i++){
+    const k = FUSION_CHAIN[i];
+    if(k === 'base') continue;
+    if(e.fusion[k] > 0 || e.activeTier === k) return true;
+  }
+  return false;
+}
+function countCharactersAtFusionTier(tierKey){
+  return CHARACTERS.filter(c => hasReachedFusionTier(c.id, tierKey)).length;
+}
+// liste tous les exemplaires d'objets possédés par le joueur : ceux dans le sac (state.items)
+// + ceux actuellement équipés sur un personnage
+function getOwnedItemInstances(){
+  const list = [...state.items];
+  Object.keys(state.collection).forEach(charId => {
+    const e = state.collection[charId];
+    if(!e || !e.equip) return;
+    ['arme','armure','amulette'].forEach(slot => { if(e.equip[slot]) list.push(e.equip[slot]); });
+  });
+  return list;
+}
+function ownsAllItemsOfSlot(slot){
+  const ids = ITEMS.filter(i => i.slot === slot).map(i => i.id);
+  const owned = new Set(getOwnedItemInstances().map(it => it.templateId));
+  return ids.every(id => owned.has(id));
+}
+function allItemsOfSlotUpgraded(slot, minLevel){
+  const ids = ITEMS.filter(i => i.slot === slot).map(i => i.id);
+  const instances = getOwnedItemInstances();
+  return ids.every(id => instances.some(it => it.templateId === id && (it.upgrade || 0) >= minLevel));
+}
+function allItemsUpgraded(minLevel){
+  const ids = ITEMS.map(i => i.id);
+  const instances = getOwnedItemInstances();
+  return ids.every(id => instances.some(it => it.templateId === id && (it.upgrade || 0) >= minLevel));
+}
+function totalUnlockedVariants(){
+  return Object.values(state.collection).reduce((s, e) => s + (e.unlocked ? e.unlocked.length : 0), 0);
+}
+
+const BADGE_RARITY_ORDER = ['commun', 'rare', 'epique', 'legendaire', 'mythique'];
+
+const BADGES = [
+  /* ---------- COMMUN (faciles) ---------- */
+  { id:'b_first_box',    rarity:'commun', icon:'📦', name:'Premier tirage',
+    desc:'Ouvre ta première boîte.', reward:3, target:1,
+    progress:() => state.counters.boxesOpened },
+  { id:'b_first_win',    rarity:'commun', icon:'🥊', name:'Première victoire',
+    desc:'Gagne ton premier combat.', reward:5, target:1,
+    progress:() => state.counters.wins },
+  { id:'b_trio',         rarity:'commun', icon:'👥', name:'Trio de choc',
+    desc:'Possède 3 personnages différents.', reward:10, target:3,
+    progress:() => distinctOwnedCharactersCount() },
+  { id:'b_lvl5_one',     rarity:'commun', icon:'⭐', name:'Apprenti niveau 5',
+    desc:'Un personnage atteint le niveau 5.', reward:50, target:1,
+    progress:() => countCharactersAtLevel(5) >= 1 ? 1 : 0 },
+  { id:'b_starter_kit',  rarity:'commun', icon:'🎒', name:'Panoplie de départ',
+    desc:'Possède au moins une arme, une armure et une amulette.', reward:4, target:3,
+    progress:() => {
+      const owned = new Set(getOwnedItemInstances().map(it => it.templateId));
+      return ['arme','armure','amulette'].filter(slot => ITEMS.some(i => i.slot === slot && owned.has(i.id))).length;
+    } },
+  { id:'b_first_buy',    rarity:'commun', icon:'🪙', name:'Petit acheteur',
+    desc:'Achète ton premier objet à la boutique.', reward:3, target:1,
+    progress:() => state.counters.itemsBought },
+
+  /* ---------- RARE ---------- */
+  { id:'b_lvl5_five',    rarity:'rare', icon:'🌟', name:'Cinq étoiles',
+    desc:'Avoir 5 personnages niveau 5.', reward:500, target:5,
+    progress:() => countCharactersAtLevel(5) },
+  { id:'b_all_weapons',  rarity:'rare', icon:'⚔️', name:'Arsenal complet',
+    desc:'Possède toutes les armes.', reward:30, target:1,
+    progress:() => ownsAllItemsOfSlot('arme') ? 1 : 0 },
+  { id:'b_all_armors',   rarity:'rare', icon:'🛡️', name:'Blindage total',
+    desc:'Possède toutes les armures.', reward:30, target:1,
+    progress:() => ownsAllItemsOfSlot('armure') ? 1 : 0 },
+  { id:'b_all_amulets',  rarity:'rare', icon:'🔮', name:'Amulettes complètes',
+    desc:'Possède toutes les amulettes.', reward:30, target:1,
+    progress:() => ownsAllItemsOfSlot('amulette') ? 1 : 0 },
+  { id:'b_wins20',       rarity:'rare', icon:'🏆', name:'Vétéran',
+    desc:'Gagne 20 combats.', reward:100, target:20,
+    progress:() => state.counters.wins },
+  { id:'b_shiny_one',    rarity:'rare', icon:'✨', name:'Premier éclat',
+    desc:'Un personnage atteint le palier Shiny.', reward:500, target:1,
+    progress:() => countCharactersAtFusionTier('shiny') >= 1 ? 1 : 0 },
+
+  /* ---------- EPIQUE ---------- */
+  { id:'b_lvl5_ten',       rarity:'epique', icon:'🌠', name:'Dix étoiles',
+    desc:'Avoir 10 personnages niveau 5.', reward:500, target:10,
+    progress:() => countCharactersAtLevel(5) },
+  { id:'b_weapons_forged', rarity:'epique', icon:'🔥', name:'Armes forgées',
+    desc:'Chaque arme améliorée au niveau 5 à la forge.', reward:80, target:1,
+    progress:() => allItemsOfSlotUpgraded('arme', 5) ? 1 : 0 },
+  { id:'b_armors_forged',  rarity:'epique', icon:'🔥', name:'Armures forgées',
+    desc:'Chaque armure améliorée au niveau 5 à la forge.', reward:80, target:1,
+    progress:() => allItemsOfSlotUpgraded('armure', 5) ? 1 : 0 },
+  { id:'b_amulets_forged', rarity:'epique', icon:'🔥', name:'Amulettes forgées',
+    desc:'Chaque amulette améliorée au niveau 5 à la forge.', reward:80, target:1,
+    progress:() => allItemsOfSlotUpgraded('amulette', 5) ? 1 : 0 },
+  { id:'b_lvl10_five',     rarity:'epique', icon:'🏔️', name:'Cinq sommets',
+    desc:'Avoir 5 personnages niveau 10.', reward:750, target:5,
+    progress:() => countCharactersAtLevel(10) },
+  { id:'b_all_chars',    rarity:'legendaire', icon:'📖', name:'Panthéon',
+    desc:'Possède tous les personnages.', reward:30, target:CHARACTERS.length,
+    progress:() => distinctOwnedCharactersCount() },
+
+  /* ---------- LEGENDAIRE ---------- */
+  { id:'b_lvl10_ten',    rarity:'legendaire', icon:'🏔️', name:'Dix sommets',
+    desc:'Avoir 10 personnages niveau 10.', reward:1000, target:10,
+    progress:() => countCharactersAtLevel(10) },
+  { id:'b_celeste_one',    rarity:'epique', icon:'🌠', name:'Lumière céleste',
+    desc:'Un personnage atteint le palier Céleste.', reward:1000, target:1,
+    progress:() => countCharactersAtFusionTier('celeste') >= 1 ? 1 : 0 },
+  { id:'b_shiny_three',  rarity:'legendaire', icon:'✨', name:'Trois éclats',
+    desc:'Trois personnages différents atteignent le palier Shiny.', reward:1000, target:3,
+    progress:() => countCharactersAtFusionTier('shiny') },
+  { id:'b_wins50',       rarity:'legendaire', icon:'🏆', name:"Combattant d'élite",
+    desc:'Gagne 50 combats.', reward:25, target:50,
+    progress:() => state.counters.wins },
+  { id:'b_variants20',   rarity:'legendaire', icon:'🎭', name:'Grand collectionneur',
+    desc:'Débloque 20 formes/variantes au total.', reward:1000, target:20,
+    progress:() => totalUnlockedVariants() },
+  { id:'b_dungeon_clear',rarity:'legendaire', icon:'🗝️', name:'Explorateur du néant',
+    desc:"Termine le Donjon de l'Empire flotté 7.", reward:1500, target:1,
+    progress:() => (state.dungeon.bestClear || 0) >= 1 ? 1 : 0 },
+
+  /* ---------- MYTHIQUE (les plus difficiles) ---------- */
+  { id:'b_enolan_67',        rarity:'mythique', icon:'👺', name:"Le 67 d'Enolan",
+    desc:'Enolan atteint le palier "67".', reward:2500, target:1,
+    progress:() => hasReachedFusionTier('enolan', 's67') ? 1 : 0 },
+  { id:'b_moko_one',         rarity:'mythique', icon:'🍌', name:'Ascension ultime',
+    desc:'Un personnage atteint le palier Moko.', reward:2500, target:1,
+    progress:() => countCharactersAtFusionTier('moko') >= 1 ? 1 : 0 },
+  { id:'b_own_king',         rarity:'mythique', icon:'👑', name:'Le Roi est là',
+    desc:'Possède Allah.', reward:3000, target:1,
+    progress:() => ownsCharacter('roi67') ? 1 : 0 },
+  { id:'b_wins100',          rarity:'mythique', icon:'⚔️', name:'Sang et Légende',
+    desc:'Gagne 100 combats.', reward:300, target:100,
+    progress:() => state.counters.wins },
+  { id:'b_master_forge',     rarity:'mythique', icon:'🔨', name:'Maître forgeron',
+    desc:'Tous les équipements (armes, armures, amulettes) améliorés au niveau 10.', reward:300, target:1,
+    progress:() => allItemsUpgraded(10) ? 1 : 0 },
+  { id:'b_absolute_pantheon',rarity:'mythique', icon:'🌌', name:'Panthéon absolu',
+    desc:'Tous les personnages niveau 10+, et arsenal, blindage et amulettes complets.', reward:500, target:1,
+    progress:() => (countCharactersAtLevel(10) >= CHARACTERS.length && ownsAllItemsOfSlot('arme') && ownsAllItemsOfSlot('armure') && ownsAllItemsOfSlot('amulette')) ? 1 : 0 },
+];
+
+function ensureBadgeEntry(id){
+  if(!state.badges[id]) state.badges[id] = { claimed:false, notified:false };
+  return state.badges[id];
+}
+
+// Vérifie discrètement si de nouveaux badges viennent de devenir disponibles, et affiche un
+// toast d'information (une seule fois par badge) sans les récupérer automatiquement.
+function checkBadgeNotifications(){
+  let changed = false;
+  BADGES.forEach(b => {
+    const entry = ensureBadgeEntry(b.id);
+    if(entry.claimed || entry.notified) return;
+    if(b.progress() >= b.target){
+      entry.notified = true;
+      changed = true;
+      toast('Badge disponible !', `"${b.name}" peut être récupéré dans l'onglet Badges.`);
+    }
+  });
+  if(changed) save();
+}
+
+function claimBadge(id){
+  const b = BADGES.find(x => x.id === id);
+  if(!b) return;
+  const entry = ensureBadgeEntry(id);
+  if(entry.claimed || b.progress() < b.target) return;
+  entry.claimed = true;
+  entry.notified = true;
+  state.tokens += b.reward;
+  save();
+  renderHeader();
+  renderBadges();
+  toast('Badge récupéré', `"${b.name}" +${b.reward} jetons`);
+}
+
+function renderBadges(){
+  const container = document.getElementById('badgesContainer');
+  container.innerHTML = '';
+  let totalClaimed = 0;
+
+  BADGE_RARITY_ORDER.forEach(rarity => {
+    const group = BADGES.filter(b => b.rarity === rarity);
+    if(group.length === 0) return;
+
+    const block = document.createElement('div');
+    block.className = 'badge-rarity-block';
+
+    const claimedInGroup = group.filter(b => ensureBadgeEntry(b.id).claimed).length;
+    totalClaimed += claimedInGroup;
+
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'badge-rarity-title';
+    titleDiv.style.color = RARITY_COLOR[rarity];
+    titleDiv.innerHTML = `<span>${RARITY_LABEL[rarity]}</span><span class="badge-rarity-count mono">${claimedInGroup}/${group.length}</span>`;
+    block.appendChild(titleDiv);
+
+    const grid = document.createElement('div');
+    grid.className = 'badge-grid';
+
+    group.forEach(b => {
+      const entry = ensureBadgeEntry(b.id);
+      const current = Math.min(b.progress(), b.target);
+      const ready = !entry.claimed && current >= b.target;
+      const pct = Math.round((current / b.target) * 100);
+
+      const card = document.createElement('div');
+      card.className = 'badge-card' + (entry.claimed ? ' claimed' : '') + (ready ? ' ready' : '');
+      card.style.borderColor = (ready || entry.claimed) ? RARITY_COLOR[rarity] : 'var(--line)';
+      card.innerHTML = `
+        <div class="badge-top">
+          <div class="badge-icon" style="color:${RARITY_COLOR[rarity]}">${b.icon}</div>
+          <div>
+            <div class="badge-name" style="color:${RARITY_COLOR[rarity]}">${b.name}</div>
+          </div>
+        </div>
+        <div class="badge-desc">${b.desc}</div>
+        <div class="badge-progress-bg"><div class="badge-progress-fill" style="width:${pct}%; background:${entry.claimed ? 'var(--essence)' : ''}"></div></div>
+        <div class="badge-foot">
+          <span class="badge-progress-text mono">${current}/${b.target}</span>
+          ${entry.claimed
+            ? `<span class="badge-claimed-tag mono">✓ Récupéré</span>`
+            : `<button class="ghost small badge-claim-btn" ${ready ? '' : 'disabled'}>${ready ? ('Récupérer +' + b.reward) : ('+' + b.reward + ' jetons')}</button>`}
+        </div>
+      `;
+      if(!entry.claimed){
+        const btn = card.querySelector('.badge-claim-btn');
+        if(btn) btn.addEventListener('click', () => claimBadge(b.id));
+      }
+      grid.appendChild(card);
+    });
+
+    block.appendChild(grid);
+    container.appendChild(block);
+  });
+
+  document.getElementById('badgesSummary').textContent = `${totalClaimed} / ${BADGES.length} badges récupérés`;
+}
+
 /* ====================== INIT ====================== */
 renderHeader();
 renderGrid();
 renderPicker();
 renderQuests();
+renderBadges();
+checkBadgeNotifications();
 </script>
 
 </body>
