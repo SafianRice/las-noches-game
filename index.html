@@ -23,6 +23,7 @@
     --common:#7d8590;
     --essence:#2ee6a6;
     --essence-dim:#163a30;
+    --mythique:#ff6bd6;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -262,6 +263,7 @@
   .rar-rare{ color:var(--reiatsu); }
   .rar-epique{ color:var(--epique); }
   .rar-legendaire{ color:var(--gold); }
+  .rar-mythique{ color:var(--mythique); }
 
   .reveal-card.commun{ background:var(--panel); box-shadow:0 0 40px rgba(125,133,144,.15); }
   .reveal-card.rare{ background:linear-gradient(160deg,#132635,var(--panel)); box-shadow:0 0 50px rgba(76,201,240,.25); }
@@ -502,6 +504,24 @@
   .variant-slot .v-icon{ font-size:26px; display:block; margin-bottom:4px; }
   .variant-slot .v-name{ font-family:'Bebas Neue',sans-serif; font-size:12px; line-height:1.15; }
   .variant-slot .v-tag{ font-family:'JetBrains Mono',monospace; font-size:8px; color:var(--essence); margin-top:3px; display:block; }
+  .variant-slot .v-rarity{ font-family:'JetBrains Mono',monospace; font-size:8px; margin-top:2px; display:block; text-transform:uppercase; letter-spacing:.1em; }
+
+  .fusion-row{
+    display:flex; align-items:center; gap:10px; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:12px; padding:10px 12px; margin-bottom:8px;
+  }
+  .fusion-row.active-tier{ border-color:var(--essence); background:rgba(46,230,166,.08); }
+  .fusion-row .f-icon{ font-size:26px; }
+  .fusion-row .f-info{ flex:1; text-align:left; }
+  .fusion-row .f-name{ font-family:'Bebas Neue',sans-serif; font-size:14px; }
+  .fusion-row .f-count{ font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--muted); }
+  .fusion-row .f-btns{ display:flex; gap:6px; flex-wrap:wrap; }
+
+  .boost-tag{
+    display:inline-block; margin-left:6px; font-family:'JetBrains Mono',monospace; font-size:9px;
+    letter-spacing:.15em; border-radius:100px; padding:2px 8px;
+    animation: elitepulse 1.4s ease-in-out infinite;
+  }
 
   .equip-row{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
   .equip-slot{
@@ -790,6 +810,9 @@
     <div class="block-title"><span>Formes du personnage</span></div>
     <div class="variants-grid" id="cmVariants"></div>
 
+    <div class="block-title"><span>Fusion des doublons</span></div>
+    <div id="cmFusion"></div>
+
     <div class="block-title"><span>Équipement</span></div>
     <div class="equip-row" id="cmEquip"></div>
 
@@ -817,6 +840,16 @@ const RARITY_LABEL = { commun:'Commun', rare:'Rare', epique:'Epique', legendaire
 const RARITY_WEIGHT = { commun:14, rare:7, epique:3, legendaire:1 };
 const RARITY_COLOR = { commun:'var(--common)', rare:'var(--reiatsu)', epique:'var(--epique)', legendaire:'var(--gold)' };
 const RARITY_STAT_MULT = { commun:1, rare:1.25, epique:1.55, legendaire:2 };
+
+// Rareté des formes ("variantes") : chaque forme débloquée a sa propre rareté,
+// avec un taux d'apparition et un boost de stats différents.
+const VARIANT_RARITY_ORDER = ['rare', 'epique', 'legendaire', 'mythique'];
+const VARIANT_RARITY_LABEL = { rare:'Rare', epique:'Épique', legendaire:'Légendaire', mythique:'Mythique' };
+const VARIANT_RARITY_COLOR = { rare:'var(--reiatsu)', epique:'var(--epique)', legendaire:'var(--gold)', mythique:'var(--mythique)' };
+// poids de tirage : plus c'est haut, plus la forme a de chances d'être obtenue en boîte unique
+const VARIANT_RARITY_WEIGHT = { rare:50, epique:28, legendaire:14, mythique:6 };
+// bonus (fraction additive) apporté aux stats du personnage par forme débloquée de cette rareté
+const VARIANT_RARITY_BONUS = { rare:0.05, epique:0.10, legendaire:0.18, mythique:0.30 };
 
 const CHARACTERS = [
   { id:'mohax', name:'Mohax', icon:'🔥', rarity:'epique', flavor:"Seigeur des enfers",
@@ -863,16 +896,28 @@ const VARIANT_NAMES = {
   azzno: ["Azznoir", "Azzjoie", "Azzrock", "SINJ SUCEUR"]
 };
 
-// transforme les listes de noms en objets {id, name, hue} pour donner une teinte unique à chaque forme
+// transforme les listes de noms en objets {id, name, hue, rarity} pour donner une teinte
+// et une rareté (donc un taux de drop et un boost) unique à chaque forme
 const VARIANTS = {};
 Object.keys(VARIANT_NAMES).forEach(charId => {
-  VARIANTS[charId] = VARIANT_NAMES[charId].map((name, i) => ({
-    id: charId + '_v' + (i + 1),
-    name,
-    hue: Math.round(i * 47 + 25) % 360,
-    flavor: "Une forme éveillée, plus puissante que l'originale."
-  }));
+  VARIANTS[charId] = VARIANT_NAMES[charId].map((name, i) => {
+    const rarity = VARIANT_RARITY_ORDER[i % VARIANT_RARITY_ORDER.length];
+    return {
+      id: charId + '_v' + (i + 1),
+      name,
+      rarity,
+      hue: Math.round(i * 47 + 25) % 360,
+      flavor: "Une forme éveillée, plus puissante que l'originale."
+    };
+  });
 });
+function findVariantById(vid){
+  for(const charId in VARIANTS){
+    const found = VARIANTS[charId].find(v => v.id === vid);
+    if(found) return found;
+  }
+  return null;
+}
 
 const ITEMS = [
   { id:'w1', slot:'arme', name:'Negrolan', icon:'💪🏿', rarity:'commun', bonus:{atk:4}, price:3 },
@@ -892,12 +937,52 @@ const ITEMS = [
 ];
 const SLOT_LABEL = { arme:'Arme', armure:'Armure', amulette:'Amulette' };
 
-const DIFFICULTY = {
-  facile:    { label:'Facile',    enemyMult:0.85, rewardMult:0.8,  eliteChance:0.05 },
-  normal:    { label:'Normal',    enemyMult:1.0,  rewardMult:1.0,  eliteChance:0.12 },
-  difficile: { label:'Difficile', enemyMult:1.25, rewardMult:1.35, eliteChance:0.22 },
-  cauchemar: { label:'Cauchemar', enemyMult:1.6,  rewardMult:1.8,  eliteChance:0.35 },
+// Fusion des doublons : 2 exemplaires d'un palier donnent 1 exemplaire du palier suivant.
+// base -> shiny -> celeste -> s67 -> moko
+const FUSION_CHAIN = ['base', 'shiny', 'celeste', 's67', 'moko'];
+// nombre de doublons du palier précédent nécessaires pour obtenir 1 exemplaire du palier indiqué
+const FUSION_REQUIREMENTS = { shiny:10, celeste:5, s67:3, moko:2 };
+const FUSION_TIERS = {
+  shiny:   { key:'shiny',   label:'Shiny',   icon:'✨', mult:1.15, color:'#ffe066' },
+  celeste: { key:'celeste', label:'Céleste', icon:'🌠', mult:1.35, color:'#8ad7ff' },
+  s67:     { key:'s67',     label:'67',      icon:'👺', mult:1.6,  color:'#ff8a3d' },
+  moko:    { key:'moko',    label:'Moko',    icon:'🍌', mult:2.0,  color:'#c86bff' },
 };
+
+// Chaque adversaire a désormais un niveau FIXE selon la difficulté choisie : il ne dépend
+// plus ni du niveau du personnage du joueur, ni de sa série de victoires.
+const DIFFICULTY = {
+  facile:    { label:'Facile',    enemyLevel:5,  rewardMult:0.8,
+    boosts:{ elite:0.05, golden:0.01,  divin:0.002, secret:0.0005 } },
+  normal:    { label:'Normal',    enemyLevel:15, rewardMult:1.0,
+    boosts:{ elite:0.12, golden:0.03,  divin:0.006, secret:0.001 } },
+  difficile: { label:'Difficile', enemyLevel:30, rewardMult:1.35,
+    boosts:{ elite:0.22, golden:0.08,  divin:0.015, secret:0.003 } },
+  cauchemar: { label:'Cauchemar', enemyLevel:50, rewardMult:1.8,
+    boosts:{ elite:0.35, golden:0.15,  divin:0.04,  secret:0.008 } },
+};
+
+// Boosts que peut avoir un adversaire sauvage, du plus commun au plus rare.
+// statMult s'applique à HP/ATQ/DEF, spdMult à la vitesse, en plus du niveau fixe.
+const BOOST_TIERS = [
+  { key:'elite',  label:'Élite',  icon:'⚔️', statMult:1.4, spdMult:1.15, rewardMult:1.4, essenceBonus:3,  color:'#f1c40f' },
+  { key:'golden', label:'Golden', icon:'🌟', statMult:1.8, spdMult:1.25, rewardMult:1.8, essenceBonus:6,  color:'#ffd700' },
+  { key:'divin',  label:'Divin',  icon:'⚡', statMult:2.3, spdMult:1.35, rewardMult:2.5, essenceBonus:10, color:'#7ee8ff' },
+  { key:'secret', label:'Secret', icon:'👁️', statMult:3.2, spdMult:1.5,  rewardMult:4,   essenceBonus:18, color:'#ff2fd6' },
+];
+
+// Tire chaque boost indépendamment selon les chances de la difficulté, et garde le plus fort
+// si plusieurs se déclenchent en même temps.
+function rollBoost(diffSettings){
+  let chosen = null;
+  BOOST_TIERS.forEach(b => {
+    const chance = (diffSettings.boosts && diffSettings.boosts[b.key]) || 0;
+    if(Math.random() < chance){
+      if(!chosen || b.statMult > chosen.statMult) chosen = b;
+    }
+  });
+  return chosen;
+}
 const XP_BASE_BY_RARITY = { commun:12, rare:18, epique:26, legendaire:40 };
 
 const QUEST_POOL = [
@@ -930,13 +1015,35 @@ function save(){ localStorage.setItem('reiatsu_state_v3', JSON.stringify(state))
 
 function ensureEntry(charId){
   if(!state.collection[charId]){
-    state.collection[charId] = { count:0, xp:0, level:1, essence:0, unlocked:[], skin:null, equip:{arme:null, armure:null, amulette:null} };
+    state.collection[charId] = { count:0, xp:0, level:1, essence:0, unlocked:[], skin:null, equip:{arme:null, armure:null, amulette:null},
+      fusion:{shiny:0, celeste:0, s67:0, moko:0}, activeTier:'base' };
   }
   const e = state.collection[charId];
   if(e.equip === undefined) e.equip = {arme:null, armure:null, amulette:null};
   if(e.unlocked === undefined) e.unlocked = [];
   if(e.skin === undefined) e.skin = null;
+  if(e.fusion === undefined) e.fusion = {shiny:0, celeste:0, s67:0, moko:0};
+  if(e.activeTier === undefined) e.activeTier = 'base';
   return e;
+}
+
+function fusionTierCount(e, tierKey){
+  return tierKey === 'base' ? e.count : e.fusion[tierKey];
+}
+
+function fuseUp(charId, fromKey){
+  const e = ensureEntry(charId);
+  const idx = FUSION_CHAIN.indexOf(fromKey);
+  const toKey = FUSION_CHAIN[idx + 1];
+  if(!toKey) return;
+  const required = FUSION_REQUIREMENTS[toKey];
+  if(fusionTierCount(e, fromKey) < required) return;
+  if(fromKey === 'base') e.count -= required; else e.fusion[fromKey] -= required;
+  e.fusion[toKey] += 1;
+  save();
+  toast('Fusion réussie', `Tu obtiens une forme ${FUSION_TIERS[toKey].label} !`);
+  renderCharModal();
+  renderGrid();
 }
 
 function xpToNext(level){ return Math.round(50 * Math.pow(1.17, level - 1)); }
@@ -951,8 +1058,15 @@ function computeEffectiveStats(charId){
   const e = ensureEntry(charId);
   const rarityMult = RARITY_STAT_MULT[char.rarity];
   const levelMult = 1 + (e.level - 1) * 0.045;
-  const variantMult = 1 + e.unlocked.length * 0.05;
-  const mult = rarityMult * levelMult * variantMult;
+  // chaque forme débloquée apporte un bonus différent selon sa propre rareté
+  const variantBonus = e.unlocked.reduce((sum, vid) => {
+    const v = findVariantById(vid);
+    return sum + (v ? VARIANT_RARITY_BONUS[v.rarity] : 0);
+  }, 0);
+  const variantMult = 1 + variantBonus;
+  const tierInfo = FUSION_TIERS[e.activeTier];
+  const tierMult = tierInfo ? tierInfo.mult : 1;
+  const mult = rarityMult * levelMult * variantMult * tierMult;
 
   const stats = {
     hp: Math.round(char.base.hp * mult),
@@ -1113,10 +1227,11 @@ function renderGrid(){
     if(owned){
       const need = xpToNext(e.level);
       const pct = Math.min(100, Math.round((e.xp / need) * 100));
+      const gridTierInfo = FUSION_TIERS[e.activeTier];
       card.innerHTML = `
         <span class="lvl-badge">Niv. ${e.level}</span>
         <span class="icon">${c.icon}</span>
-        <div class="name">${c.name}</div>
+        <div class="name">${c.name}${gridTierInfo ? ` <span class="boost-tag" style="color:${gridTierInfo.color};border:1px solid ${gridTierInfo.color}">${gridTierInfo.icon}</span>` : ''}</div>
         <div class="count">x${e.count} obtenu${e.count>1?'s':''}</div>
         <div class="rarity-tag" style="color:${RARITY_COLOR[c.rarity]}">${RARITY_LABEL[c.rarity]}</div>
         <div class="mini-xp"><div class="mini-xp-fill" style="width:${pct}%"></div></div>
@@ -1152,7 +1267,8 @@ function renderCharModal(){
 
   document.getElementById('cmIcon').textContent = c.icon;
   document.getElementById('cmIcon').style.color = RARITY_COLOR[c.rarity];
-  document.getElementById('cmName').textContent = c.name;
+  const tierInfo = FUSION_TIERS[e.activeTier];
+  document.getElementById('cmName').innerHTML = c.name + (tierInfo ? ` <span class="boost-tag" style="color:${tierInfo.color};border:1px solid ${tierInfo.color}">${tierInfo.icon} ${tierInfo.label}</span>` : '');
   document.getElementById('cmRarityTag').textContent = RARITY_LABEL[c.rarity];
   document.getElementById('cmRarityTag').style.color = RARITY_COLOR[c.rarity];
   document.getElementById('cmFlavor').textContent = c.flavor;
@@ -1183,11 +1299,16 @@ function renderCharModal(){
     const unlocked = e.unlocked.includes(v.id);
     const active = e.skin === v.id;
     if(!unlocked){
-      return `<div class="variant-slot locked"><span class="v-icon">❔</span><div class="v-name">???</div></div>`;
+      return `<div class="variant-slot locked">
+        <span class="v-icon">❔</span>
+        <div class="v-name">???</div>
+        <span class="v-rarity" style="color:${VARIANT_RARITY_COLOR[v.rarity]}">${VARIANT_RARITY_LABEL[v.rarity]}</span>
+      </div>`;
     }
     return `<div class="variant-slot unlocked ${active ? 'active' : ''}" data-vid="${v.id}">
       <span class="v-icon" style="filter:hue-rotate(${v.hue}deg)">${c.icon}</span>
       <div class="v-name">${v.name}</div>
+      <span class="v-rarity" style="color:${VARIANT_RARITY_COLOR[v.rarity]}">${VARIANT_RARITY_LABEL[v.rarity]} · +${Math.round(VARIANT_RARITY_BONUS[v.rarity]*100)}%</span>
       <span class="v-tag">${active ? 'active' : 'choisir'}</span>
     </div>`;
   }).join('');
@@ -1200,6 +1321,8 @@ function renderCharModal(){
       renderGrid();
     });
   });
+
+  renderFusionBlock(c.id);
 
   const equipRow = document.getElementById('cmEquip');
   equipRow.innerHTML = '';
@@ -1220,6 +1343,48 @@ function renderCharModal(){
   });
 }
 
+function renderFusionBlock(charId){
+  const e = ensureEntry(charId);
+  const container = document.getElementById('cmFusion');
+  const rows = [
+    { from:'base',    to:'shiny',   fromCount: e.count,          toCount: e.fusion.shiny,   fromLabel:'exemplaires' },
+    { from:'shiny',   to:'celeste', fromCount: e.fusion.shiny,   toCount: e.fusion.celeste, fromLabel:FUSION_TIERS.shiny.label },
+    { from:'celeste', to:'s67',     fromCount: e.fusion.celeste, toCount: e.fusion.s67,     fromLabel:FUSION_TIERS.celeste.label },
+    { from:'s67',      to:'moko',   fromCount: e.fusion.s67,     toCount: e.fusion.moko,    fromLabel:FUSION_TIERS.s67.label },
+  ];
+  container.innerHTML = rows.map(r => {
+    const tierInfo = FUSION_TIERS[r.to];
+    const required = FUSION_REQUIREMENTS[r.to];
+    const canFuse = r.fromCount >= required;
+    const canActivate = r.toCount >= 1;
+    const isActive = e.activeTier === r.to;
+    return `<div class="fusion-row ${isActive ? 'active-tier' : ''}" data-to="${r.to}" data-from="${r.from}">
+      <span class="f-icon" style="color:${tierInfo.color}">${tierInfo.icon}</span>
+      <div class="f-info">
+        <div class="f-name">${tierInfo.label} <span class="mono" style="color:var(--essence)">+${Math.round((tierInfo.mult-1)*100)}%</span></div>
+        <div class="f-count">possédés : ${r.toCount} · nécessite ${required}× ${r.fromLabel} (dispo : ${r.fromCount})</div>
+      </div>
+      <div class="f-btns">
+        <button class="ghost small fuse-btn" ${canFuse ? '' : 'disabled'}>Fusionner</button>
+        <button class="ghost small activate-btn" ${canActivate ? '' : 'disabled'}>${isActive ? 'Active' : 'Activer'}</button>
+      </div>
+    </div>`;
+  }).join('');
+  container.querySelectorAll('.fuse-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => fuseUp(charId, rows[i].from));
+  });
+  container.querySelectorAll('.activate-btn').forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      const r = rows[i];
+      if(fusionTierCount(e, r.to) < 1) return;
+      e.activeTier = (e.activeTier === r.to) ? 'base' : r.to;
+      save();
+      renderCharModal();
+      renderGrid();
+    });
+  });
+}
+
 document.getElementById('cmCloseBtn').addEventListener('click', () => {
   document.getElementById('charModalBackdrop').classList.remove('show');
 });
@@ -1232,15 +1397,28 @@ document.getElementById('cmEssenceBoxBtn').addEventListener('click', () => {
   openEssenceBox(currentModalCharId);
 });
 
+function pickVariant(charId){
+  const e = ensureEntry(charId);
+  const locked = VARIANTS[charId].filter(v => !e.unlocked.includes(v.id));
+  if(locked.length === 0) return null;
+  const totalW = locked.reduce((s, v) => s + VARIANT_RARITY_WEIGHT[v.rarity], 0);
+  let roll = Math.random() * totalW;
+  for(const v of locked){
+    const w = VARIANT_RARITY_WEIGHT[v.rarity];
+    if(roll < w) return v;
+    roll -= w;
+  }
+  return locked[locked.length - 1];
+}
+
 function openEssenceBox(charId){
   const c = CHARACTERS.find(x => x.id === charId);
   const e = ensureEntry(charId);
   const cost = essenceBoxCost(charId);
-  const locked = VARIANTS[charId].filter(v => !e.unlocked.includes(v.id));
-  if(locked.length === 0 || e.essence < cost) return;
+  const picked = pickVariant(charId);
+  if(!picked || e.essence < cost) return;
 
   e.essence -= cost;
-  const picked = locked[Math.floor(Math.random() * locked.length)];
   e.unlocked.push(picked.id);
   save();
 
@@ -1252,7 +1430,9 @@ function openEssenceBox(charId){
   document.getElementById('variantIcon').style.color = 'var(--essence)';
   document.getElementById('variantIcon').style.filter = `hue-rotate(${picked.hue}deg) drop-shadow(0 0 20px currentColor)`;
   document.getElementById('variantName').textContent = picked.name;
-  document.getElementById('variantFlavor').textContent = picked.flavor + ' Toutes les stats de ' + c.name + ' augmentent durablement.';
+  const bonusPct = Math.round(VARIANT_RARITY_BONUS[picked.rarity] * 100);
+  document.getElementById('variantFlavor').textContent =
+    `${picked.flavor} Forme ${VARIANT_RARITY_LABEL[picked.rarity]} : +${bonusPct}% de stats pour ${c.name}, durablement.`;
   backdrop.classList.add('show');
 }
 document.getElementById('variantCloseBtn').addEventListener('click', () => {
@@ -1418,7 +1598,9 @@ function renderPicker(){
     `;
     div.addEventListener('click', () => {
       selectedFighterId = c.id;
-      skinIndex = 0;
+      const list = fighterSkinList(c.id);
+      const idx = list.findIndex(s => s.id === e.skin);
+      skinIndex = idx >= 0 ? idx : 0;
       renderPicker();
     });
     picker.appendChild(div);
@@ -1491,17 +1673,20 @@ function startBattle(){
   const enemyChar = pickEnemy();
   const e = ensureEntry(playerChar.id);
   const diffSettings = DIFFICULTY[state.difficulty] || DIFFICULTY.normal;
-  const isElite = Math.random() < diffSettings.eliteChance;
-  const diffMult = (1 + Math.min(state.winStreak, 10) * 0.05 + (e.level - 1) * 0.02)
-    * diffSettings.enemyMult * (isElite ? 1.5 : 1);
+
+  // Niveau fixe de l'adversaire selon la difficulté (indépendant du niveau du joueur et de sa série de victoires).
+  const boost = rollBoost(diffSettings);
+  const enemyLevelMult = 1 + (diffSettings.enemyLevel - 1) * 0.045;
+  const statMult = enemyLevelMult * (boost ? boost.statMult : 1);
+  const spdMult = (boost ? boost.spdMult : 1);
 
   const pStats = computeEffectiveStats(playerChar.id);
   const eStatsRaw = wildStatsFor(enemyChar);
   const eStats = {
-    hp: Math.round(eStatsRaw.hp * diffMult),
-    atk: Math.round(eStatsRaw.atk * diffMult),
-    def: Math.round(eStatsRaw.def * diffMult),
-    spd: Math.round(eStatsRaw.spd * (isElite ? 1.2 : 1)),
+    hp: Math.round(eStatsRaw.hp * statMult),
+    atk: Math.round(eStatsRaw.atk * statMult),
+    def: Math.round(eStatsRaw.def * statMult),
+    spd: Math.round(eStatsRaw.spd * spdMult),
   };
 
   state.counters.battles++;
@@ -1509,7 +1694,7 @@ function startBattle(){
 
   battle = {
     player: { charId: playerChar.id, stats: pStats, hp: pStats.hp, skillReady: true },
-    enemy: { char: enemyChar, stats: eStats, hp: eStats.hp, skillReady: true, elite: isElite },
+    enemy: { char: enemyChar, stats: eStats, hp: eStats.hp, skillReady: true, boost },
     over: false
   };
 
@@ -1518,22 +1703,33 @@ function startBattle(){
   document.getElementById('resultZone').innerHTML = '';
   document.getElementById('actionZone').style.display = 'flex';
 
-  skinIndex = 0;
+  // Corrige le bug qui obligeait à faire F5 : les boutons restaient désactivés
+  // depuis la fin du combat précédent.
+  document.getElementById('atkBtn').disabled = false;
+  document.getElementById('skillBtn').disabled = false;
+
+  // Synchronise l'affichage avec la forme (variante) choisie dans la Collection.
+  const skinList = fighterSkinList(playerChar.id);
+  const skinIdx = skinList.findIndex(s => s.id === e.skin);
+  skinIndex = skinIdx >= 0 ? skinIdx : 0;
   updateSkinRow();
   const skin = currentSkin();
+  const tierInfo = FUSION_TIERS[e.activeTier];
+  const tierPrefix = tierInfo ? `${tierInfo.icon} ` : '';
   document.getElementById('pIcon').textContent = skin.icon;
-  document.getElementById('pIcon').style.color = RARITY_COLOR[playerChar.rarity];
+  document.getElementById('pIcon').style.color = tierInfo ? tierInfo.color : RARITY_COLOR[playerChar.rarity];
   document.getElementById('pIcon').style.filter = skin.hue ? `hue-rotate(${skin.hue}deg) drop-shadow(0 0 16px currentColor)` : '';
-  document.getElementById('pName').textContent = skin.name;
+  document.getElementById('pName').textContent = tierPrefix + skin.name;
   document.getElementById('eIcon').textContent = enemyChar.icon;
-  document.getElementById('eIcon').style.color = isElite ? 'var(--gold)' : RARITY_COLOR[enemyChar.rarity];
-  document.getElementById('eIcon').style.filter = isElite ? 'drop-shadow(0 0 16px var(--gold))' : '';
-  document.getElementById('eName').innerHTML = enemyChar.name + ' (sauvage)' + (isElite ? '<span class="elite-tag">Élite</span>' : '');
+  document.getElementById('eIcon').style.color = boost ? boost.color : RARITY_COLOR[enemyChar.rarity];
+  document.getElementById('eIcon').style.filter = boost ? `drop-shadow(0 0 16px ${boost.color})` : '';
+  document.getElementById('eName').innerHTML = enemyChar.name + ' (sauvage)' +
+    (boost ? `<span class="boost-tag" style="color:${boost.color};border:1px solid ${boost.color}">${boost.icon} ${boost.label}</span>` : '');
 
   updateHpBars();
   const log = document.getElementById('combatLog');
   log.innerHTML = '';
-  addLog(isElite ? `Un ${enemyChar.name} ÉLITE sauvage apparait !` : `Un ${enemyChar.name} sauvage apparait !`, 'sys');
+  addLog(boost ? `Un ${enemyChar.name} ${boost.label.toUpperCase()} sauvage apparait !` : `Un ${enemyChar.name} sauvage apparait !`, 'sys');
 }
 
 
@@ -1670,7 +1866,7 @@ function endBattle(playerWon){
     state.counters.wins++;
     state.counters.maxStreak = Math.max(state.counters.maxStreak, state.winStreak);
 
-    const elite = !!battle.enemy.elite;
+    const boost = battle.enemy.boost;
     const enemyChar = battle.enemy.char;
     const baseWild = wildStatsFor(enemyChar);
     const baseTotal = baseWild.hp + baseWild.atk + baseWild.def + baseWild.spd;
@@ -1683,25 +1879,25 @@ function endBattle(playerWon){
     );
     if(flawless) xpGain = Math.round(xpGain * 1.25);
 
-    const reward = Math.round((2 + Math.floor(state.winStreak / 3)) * diffSettings.rewardMult * (elite ? 1.4 : 1));
+    const reward = Math.round((2 + Math.floor(state.winStreak / 3)) * diffSettings.rewardMult * (boost ? boost.rewardMult : 1));
     state.tokens += reward;
 
-    let eliteEssence = 0;
-    if(elite){
-      eliteEssence = Math.round(3 * diffSettings.rewardMult);
-      ensureEntry(c.id).essence += eliteEssence;
+    let boostEssence = 0;
+    if(boost){
+      boostEssence = Math.round(boost.essenceBonus * diffSettings.rewardMult);
+      ensureEntry(c.id).essence += boostEssence;
     }
 
     save();
     renderHeader();
     const { leveledUp } = awardXP(c.id, xpGain);
 
-    addLog(`${enemyChar.name}${elite ? ' ÉLITE' : ''} est K.O. !`, 'sys');
+    addLog(`${enemyChar.name}${boost ? ' ' + boost.label.toUpperCase() : ''} est K.O. !`, 'sys');
     addLog(`${c.name} gagne ${xpGain} XP${flawless ? ' (sans dommage, bonus inclus)' : ''}`, 'xp');
 
-    zone.innerHTML = `<div class="result-badge win">VICTOIRE${elite ? ' — ÉLITE' : ''}</div>
+    zone.innerHTML = `<div class="result-badge win">VICTOIRE${boost ? ' — ' + boost.label.toUpperCase() : ''}</div>
       <div class="result-rewards">+<b>${reward}</b> jetons · +<b>${xpGain}</b> XP pour ${c.name}
-        ${eliteEssence ? ` · +<b style="color:var(--essence)">${eliteEssence}</b> essence bonus` : ''}
+        ${boostEssence ? ` · +<b style="color:var(--essence)">${boostEssence}</b> essence bonus` : ''}
         ${leveledUp ? ' · <b style="color:var(--essence)">niveau supérieur !</b>' : ''}
       </div>`;
   } else {
