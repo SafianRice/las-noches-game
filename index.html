@@ -1065,7 +1065,7 @@ const VARIANT_RARITY_COLOR = { rare:'var(--reiatsu)', epique:'var(--epique)', le
 // poids de tirage : plus c'est haut, plus la forme a de chances d'être obtenue en boîte unique
 const VARIANT_RARITY_WEIGHT = { rare:50, epique:28, legendaire:14, mythique:6 };
 // bonus (fraction additive) apporté aux stats du personnage par forme débloquée de cette rareté
-const VARIANT_RARITY_BONUS = { rare:0.10, epique:0.30, legendaire:0.50, mythique:0.85 };
+const VARIANT_RARITY_BONUS = { rare:0.10, epique:0.30, legendaire:0.50, mythique:0.75 };
 
 const CHARACTERS = [
   { id:'mohax', name:'Mohax', icon:'🔥', rarity:'epique', flavor:"Seigeur des enfers",
@@ -1109,7 +1109,7 @@ const CHARACTERS = [
   // Personnage secret de la boîte basique : ne suit pas RARITY_WEIGHT, tiré via une
   // probabilité fixe de 0.1% directement dans pickCharacter().
   { id:'neymarmokos', name:'Neymar Dos Mokos', icon:'⚽', rarity:'secret', flavor:"Il a signé son transfert directement aux enfers.",
-    base:{hp:850, atk:130, def:90, spd:95}, skill:{name:'Carton rouge divin', mult:3.5} },
+    base:{hp:750, atk:100, def:90, spd:65}, skill:{name:'Carton rouge divin', mult:3.5} },
 
   // Personnages exclusifs à la Boîte Squeezie/Doga (voir openSpecialBox2) : poids
   // RARITY_WEIGHT = 0 donc ils ne peuvent jamais sortir des boîtes normales.
@@ -2820,13 +2820,13 @@ function dungeonRunOver(cleared){
 // Même format que le Donjon 1 : 7 ennemis fixes à enchaîner sans régénération de PV entre chaque combat,
 // mais globalement plus difficile et plus généreux en récompenses.
 const DUNGEON2_ENEMIES = [
-  { name:'Je suis en colère', icon:'😡', base:{hp:1600, atk:55,  def:20,  spd:16}, skill:{name:'Rage aveugle',        mult:1.7} },
-  { name:'Aurélie B',         icon:'💅', base:{hp:2400, atk:75,  def:24,  spd:20}, skill:{name:'Répartie cinglante',  mult:1.8} },
-  { name:'Uzu (god form)',    icon:'🐋', base:{hp:4200, atk:130, def:40,  spd:22}, skill:{name:'Vague divine',        mult:2.0} },
-  { name:'Ksbr',               icon:'🥷', base:{hp:5800, atk:160, def:45,  spd:25}, skill:{name:'Combo ravageur',      mult:2.0} },
-  { name:'Shika',              icon:'🦌', base:{hp:7500, atk:210, def:40,  spd:30}, skill:{name:'Instinct sauvage',    mult:2.1} },
-  { name:'Léa',                icon:'🦋', base:{hp:9500, atk:260, def:60,  spd:24}, skill:{name:'Jugement',            mult:2.2} },
-  { name:'Dorimann',           icon:'👹', base:{hp:15000,atk:380, def:180, spd:28}, skill:{name:'Suprématie Doricorp', mult:2.5}, boss:true },
+  { name:'Je suis en colère', icon:'😡', base:{hp:1600, atk:400,  def:20,  spd:16}, skill:{name:'Rage aveugle',        mult:1.7} },
+  { name:'Aurélie B',         icon:'💅', base:{hp:2400, atk:400,  def:24,  spd:20}, skill:{name:'Répartie cinglante',  mult:1.8} },
+  { name:'Uzu (god form)',    icon:'🐋', base:{hp:4200, atk:400, def:40,  spd:22}, skill:{name:'Vague divine',        mult:2.0} },
+  { name:'Ksbr',               icon:'🥷', base:{hp:5800, atk:500, def:45,  spd:25}, skill:{name:'Combo ravageur',      mult:2.0} },
+  { name:'Shika',              icon:'🦌', base:{hp:7500, atk:650, def:40,  spd:30}, skill:{name:'Instinct sauvage',    mult:2.1} },
+  { name:'Léa',                icon:'🦋', base:{hp:9500, atk:800, def:60,  spd:24}, skill:{name:'Jugement',            mult:2.2} },
+  { name:'Dorimann',           icon:'👹', base:{hp:15000,atk:1000, def:180, spd:28}, skill:{name:'Suprématie Doricorp', mult:2.5}, boss:true },
 ];
 const DUNGEON2_REWARD_PER_ENEMY = 9;
 const DUNGEON2_CLEAR_BONUS = { tokens:90, essence:30 };
