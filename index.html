@@ -24,6 +24,7 @@
     --essence:#2ee6a6;
     --essence-dim:#163a30;
     --mythique:#ff6bd6;
+    --secret:#ffffff;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -270,6 +271,7 @@
   .reveal-card.epique{ background:linear-gradient(160deg,#241533,var(--panel)); box-shadow:0 0 55px rgba(181,101,240,.28); }
   .reveal-card.legendaire{ background:linear-gradient(160deg,#2b2408,var(--panel)); box-shadow:0 0 70px rgba(241,196,15,.3); }
   .reveal-card.variante{ background:linear-gradient(160deg,#0c2a22,var(--panel)); box-shadow:0 0 60px rgba(46,230,166,.32); border-color:var(--essence); }
+  .reveal-card.secret{ background:linear-gradient(160deg,#3a3a3a,var(--panel)); box-shadow:0 0 90px rgba(255,255,255,.45); border-color:var(--secret); }
 
   .collection{
     max-width:1000px;
@@ -584,6 +586,27 @@
   .quest-foot{ display:flex; align-items:center; justify-content:space-between; margin-top:10px; gap:10px; }
   button.small-cta{ padding:9px 14px; font-size:11px; }
 
+  /* ====================== STATISTIQUES ====================== */
+  .stats-btn{
+    position:fixed; top:18px; right:18px; z-index:50;
+    max-width:none; flex:none;
+    display:flex; align-items:center; gap:6px;
+    border-radius:100px; padding:10px 16px;
+    background:var(--panel); border:1px solid var(--line);
+  }
+  .stats-btn.active{ border-color:var(--reiatsu); background:var(--panel-2); box-shadow:0 0 0 1px rgba(76,201,240,.25) inset; }
+  .stats-wrap{ max-width:900px; margin:0 auto; padding:40px 24px 80px; }
+  .stats-grid{
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:14px;
+  }
+  .stat-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:20px 16px; text-align:center;
+  }
+  .stat-card .stat-icon{ font-size:28px; display:block; margin-bottom:8px; }
+  .stat-card .stat-value{ font-family:'Bebas Neue',sans-serif; font-size:34px; color:var(--reiatsu); line-height:1; }
+  .stat-card .stat-label{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-top:8px; letter-spacing:.05em; }
+
   /* ====================== BADGES ====================== */
   .badges-wrap{ max-width:900px; margin:0 auto; }
   .badges-summary{
@@ -714,6 +737,8 @@
   <button class="nav-btn" data-tab="badges">Badges</button>
 </div>
 
+<button class="nav-btn stats-btn" data-tab="stats" title="Statistiques">📊 Stats</button>
+
 <div class="tab active" id="tab-boxes">
   <div class="arena">
     <div class="box-wrap" id="boxWrap">
@@ -732,12 +757,21 @@
     </div>
 
     <div class="shop-section">
-      <div class="section-title">Boîte spéciale · Allah 0.01% / Uzu 99.99%</div>
-      <div style="text-align:center;">
-        <div class="box-wrap" id="specialBoxWrap" style="width:130px;height:130px;">
-          <div class="box" id="specialBox" style="font-size:56px;">🎁</div>
+      <div class="shop-grid" style="grid-template-columns:repeat(auto-fit, minmax(220px,1fr));">
+        <div style="text-align:center;">
+          <div class="section-title">Boîte spéciale · Allah 0.01% / Uzu 99.99%</div>
+          <div class="box-wrap" id="specialBoxWrap" style="width:130px;height:130px;">
+            <div class="box" id="specialBox" style="font-size:56px;">🎁</div>
+          </div>
+          <button class="cta" id="specialOpenBtn">Ouvrir la sainte box (100 jetons)</button>
         </div>
-        <button class="cta" id="specialOpenBtn">Ouvrir la sainte box (50 jetons)</button>
+        <div style="text-align:center;">
+          <div class="section-title">Boîte spéciale · Squeezie 0.01% / Doga 99.99%</div>
+          <div class="box-wrap" id="squeezieBoxWrap" style="width:130px;height:130px;">
+            <div class="box" id="squeezieBox" style="font-size:56px;">🎁</div>
+          </div>
+          <button class="cta" id="squeezieOpenBtn">Ouvrir la box Squeezie (100 jetons)</button>
+        </div>
       </div>
     </div>
   </div>
@@ -825,7 +859,16 @@
 
 <div class="tab" id="tab-donjon">
   <div class="combat-wrap">
-    <div id="donjonSetup">
+
+    <div id="dungeonSelectZone">
+      <div class="section-title">Choisis ton donjon</div>
+      <div class="picker" id="dungeonSelectPicker" style="grid-template-columns:repeat(auto-fit, minmax(200px,1fr));"></div>
+    </div>
+
+    <div id="donjonSetup" style="display:none;">
+      <div style="text-align:center; margin-bottom:10px;">
+        <button class="ghost" id="donjonBackBtn">‹ Retour au choix du donjon</button>
+      </div>
       <div class="section-title">Empire flotté 7 — 7 ennemis d'affilée, sans régénération entre chaque combat</div>
       <div class="picker" id="donjonPicker"></div>
       <div style="text-align:center;">
@@ -864,6 +907,57 @@
         <button class="ghost" id="donjonQuitBtn">Abandonner / changer de combattant</button>
       </div>
     </div>
+
+    <div id="donjon2Setup" style="display:none;">
+      <div style="text-align:center; margin-bottom:10px;">
+        <button class="ghost" id="donjon2BackBtn">‹ Retour au choix du donjon</button>
+      </div>
+      <div class="section-title">Doricorp — 7 ennemis d'affilée, sans régénération entre chaque combat</div>
+      <div class="picker" id="donjon2Picker"></div>
+      <div style="text-align:center;">
+        <button class="cta" id="donjon2StartBtn" disabled>Entrer dans Doricorp</button>
+      </div>
+    </div>
+
+    <div class="vs-stage" id="donjon2Stage" style="display:none; margin-top:24px;">
+      <div class="section-title" id="donjon2EnemyCount">Ennemi 1 / 7</div>
+      <div class="fighters">
+        <div class="fighter player">
+          <span class="icon" id="d2pIcon"></span>
+          <div class="name" id="d2pName"></div>
+          <div class="hp-bar-bg"><div class="hp-bar-fill" id="d2pHpBar" style="width:100%"></div></div>
+          <div class="hp-text" id="d2pHpText"></div>
+        </div>
+        <div class="vs-label">VS</div>
+        <div class="fighter enemy">
+          <span class="icon" id="d2eIcon"></span>
+          <div class="name" id="d2eName"></div>
+          <div class="hp-bar-bg"><div class="hp-bar-fill" id="d2eHpBar" style="width:100%"></div></div>
+          <div class="hp-text" id="d2eHpText"></div>
+        </div>
+      </div>
+
+      <div id="donjon2ResultZone"></div>
+
+      <div class="actions" id="donjon2ActionZone">
+        <button class="cta blue" id="d2AtkBtn">Attaque</button>
+        <button class="cta" id="d2SkillBtn">Compétence spéciale</button>
+      </div>
+
+      <div class="log" id="donjon2Log"></div>
+
+      <div style="text-align:center; margin-top:14px;">
+        <button class="ghost" id="donjon2QuitBtn">Abandonner / changer de combattant</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="tab" id="tab-stats">
+  <div class="stats-wrap">
+    <div class="section-title">Statistiques</div>
+    <div class="stats-grid" id="statsGrid"></div>
   </div>
 </div>
 
@@ -957,10 +1051,10 @@
 
 <script>
 /* ====================== CONSTANTES ====================== */
-const RARITY_LABEL = { commun:'Commun', rare:'Rare', epique:'Epique', legendaire:'Legendaire', mythique:'Mythique' };
-const RARITY_WEIGHT = { commun:14, rare:7, epique:3, legendaire:1, mythique:0 };
-const RARITY_COLOR = { commun:'var(--common)', rare:'var(--reiatsu)', epique:'var(--epique)', legendaire:'var(--gold)', mythique:'var(--mythique)' };
-const RARITY_STAT_MULT = { commun:1, rare:1.25, epique:1.55, legendaire:2, mythique:2.6 };
+const RARITY_LABEL = { commun:'Commun', rare:'Rare', epique:'Epique', legendaire:'Legendaire', mythique:'Mythique', secret:'Secret' };
+const RARITY_WEIGHT = { commun:14, rare:7, epique:3, legendaire:1, mythique:0, secret:0 };
+const RARITY_COLOR = { commun:'var(--common)', rare:'var(--reiatsu)', epique:'var(--epique)', legendaire:'var(--gold)', mythique:'var(--mythique)', secret:'var(--secret)' };
+const RARITY_STAT_MULT = { commun:1, rare:1.25, epique:1.55, legendaire:2, mythique:2.6, secret:3.2 };
 
 // Rareté des formes ("variantes") : chaque forme débloquée a sa propre rareté,
 // avec un taux d'apparition et un boost de stats différents.
@@ -1010,6 +1104,19 @@ const CHARACTERS = [
 
   { id:'uzu', name:'Uzu', icon:'🐋', rarity:'commun', flavor:"Esclave de la flotte.",
     base:{hp:1, atk:1, def:1, spd:1}, skill:{name:'Soumission lunaire', mult:1.9} },
+
+  // Personnage secret de la boîte basique : ne suit pas RARITY_WEIGHT, tiré via une
+  // probabilité fixe de 0.1% directement dans pickCharacter().
+  { id:'neymarmokos', name:'Neymar Dos Mokos', icon:'⚽', rarity:'secret', flavor:"Il a signé son transfert directement aux enfers.",
+    base:{hp:850, atk:130, def:90, spd:95}, skill:{name:'Carton rouge divin', mult:3.5} },
+
+  // Personnages exclusifs à la Boîte Squeezie/Doga (voir openSpecialBox2) : poids
+  // RARITY_WEIGHT = 0 donc ils ne peuvent jamais sortir des boîtes normales.
+  { id:'squeezie', name:'Squeezie', icon:'🎥', rarity:'mythique', flavor:"100 millions d'abonnés, 0% de pitié au combat.",
+    base:{hp:666, atk:95, def:90, spd:85}, skill:{name:'Fisherman Squeezie', mult:3} },
+
+  { id:'doga', name:'Doga', icon:'🐕', rarity:'commun', flavor:"Aboie plus fort qu'il ne mord.",
+    base:{hp:1, atk:1, def:1, spd:1}, skill:{name:'Grognement inoffensif', mult:1.9} },
 ];
 
 const VARIANT_NAMES = {
@@ -1027,7 +1134,10 @@ const VARIANT_NAMES = {
   // Sans ces lignes, VARIANTS['roi67'] / VARIANTS['uzu'] valaient undefined et faisaient planter
   // renderGrid() dès qu'on possédait l'un des deux, ce qui empêchait Uzu de s'afficher dans la collection.
   roi67: [],
-  uzu: []
+  uzu: [],
+  neymarmokos: [],
+  squeezie: [],
+  doga: []
 };
 
 // transforme les listes de noms en objets {id, name, hue, rarity} pour donner une teinte
@@ -1068,6 +1178,17 @@ const ITEMS = [
   { id:'c2', slot:'amulette', name:'Radar de la BR', icon:'💦', rarity:'rare', bonus:{spd:6,atk:3}, price:7 },
   { id:'c3', slot:'amulette', name:'Coran', icon:'🔮', rarity:'epique', bonus:{spd:10,hp:15}, price:14 },
   { id:'c4', slot:'amulette', name:'Côte de porc', icon:'🐷', rarity:'legendaire', bonus:{spd:14,atk:8}, price:28 },
+
+  // Objets exclusifs au Donjon (Empire flotté 7) : ne s'achètent pas en boutique,
+  // ils droppent à 0.5% chacun quand on bat un ennemi du donjon (voir dungeonEnemyDown).
+  { id:'w_dungeon', slot:'arme', name:"Lame de l'Empire flotté", icon:'🗡️', rarity:'mythique', bonus:{atk:40}, price:0, dungeonOnly:true },
+  { id:'a_dungeon', slot:'armure', name:"Cuirasse de l'Empire flotté", icon:'⚱️', rarity:'mythique', bonus:{def:38,hp:80}, price:0, dungeonOnly:true },
+  { id:'c_dungeon', slot:'amulette', name:"Amulette de l'Empire flotté", icon:'🌀', rarity:'mythique', bonus:{spd:22,atk:14}, price:0, dungeonOnly:true },
+  // Objets exclusifs au Donjon 2 (Doricorp) : légèrement plus forts que ceux de l'Empire flotté 7,
+  // même principe de drop à 0.5% chacun à partir du 3e ennemi (voir dungeon2EnemyDown).
+  { id:'w_doricorp', slot:'arme', name:"Lame de Doricorp", icon:'🗡️', rarity:'mythique', bonus:{atk:46}, price:0, dungeonOnly:true },
+  { id:'a_doricorp', slot:'armure', name:"Cuirasse de Doricorp", icon:'⚱️', rarity:'mythique', bonus:{def:44,hp:90}, price:0, dungeonOnly:true },
+  { id:'c_doricorp', slot:'amulette', name:"Amulette de Doricorp", icon:'🌀', rarity:'mythique', bonus:{spd:26,atk:18}, price:0, dungeonOnly:true },
 ];
 const SLOT_LABEL = { arme:'Arme', armure:'Armure', amulette:'Amulette' };
 
@@ -1121,6 +1242,12 @@ function rollBoost(diffSettings){
   return chosen;
 }
 const XP_BASE_BY_RARITY = { commun:12, rare:18, epique:26, legendaire:40 };
+// Base fixe du gain de jetons par victoire (avant multiplicateurs de difficulté/boost).
+// Ne dépend plus de la winstreak : voir formule dans endBattle().
+const BASE_TOKEN_REWARD = 3;
+
+// Cooldown de 1s sur l'ouverture de la boîte basique (empêche le spam-clic).
+let boxCooldown = false;
 
 const QUEST_POOL = [
   { id:'q_wins3', desc:'Gagne 3 combats', metric:'wins', target:3, reward:4 },
@@ -1136,11 +1263,12 @@ const QUEST_POOL = [
 /* ====================== ETAT ====================== */
 const DEFAULT_STATE = {
   tokens:5, collection:{}, items:[], winStreak:0, itemSeq:1, difficulty:'normal',
-  counters:{ wins:0, boxesOpened:0, battles:0, levelUps:0, itemsBought:0, maxStreak:0, questsClaimed:0 },
+  counters:{ wins:0, losses:0, boxesOpened:0, battles:0, levelUps:0, itemsBought:0, maxStreak:0, questsClaimed:0 },
   quests:[],
   holyWater:0,
   gamepass:{ x3:false, x5:false, x10:false },
   dungeon:{ bestClear:0 },
+  dungeon2:{ bestClear:0 },
   badges:{}
 };
 function structuredCloneState(o){ return JSON.parse(JSON.stringify(o)); }
@@ -1153,8 +1281,10 @@ function migrateState(){
   if(state.holyWater === undefined) state.holyWater = 0;
   if(state.gamepass === undefined) state.gamepass = { x3:false, x5:false, x10:false };
   if(state.dungeon === undefined) state.dungeon = { bestClear:0 };
+  if(state.dungeon2 === undefined) state.dungeon2 = { bestClear:0 };
   if(state.badges === undefined) state.badges = {};
   if(state.counters.questsClaimed === undefined) state.counters.questsClaimed = 0;
+  if(state.counters.losses === undefined) state.counters.losses = 0;
 }
 migrateState();
 function save(){ localStorage.setItem('reiatsu_state_v3', JSON.stringify(state)); }
@@ -1293,45 +1423,85 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
     if(btn.dataset.tab === 'collection') renderGrid();
     if(btn.dataset.tab === 'shop') renderShop();
     if(btn.dataset.tab === 'quests') renderQuests();
-    if(btn.dataset.tab === 'donjon') renderDungeonPicker();
+    if(btn.dataset.tab === 'donjon') renderDungeonSelect();
     if(btn.dataset.tab === 'badges') renderBadges();
+    if(btn.dataset.tab === 'stats') renderStats();
   });
 });
+
+function renderStats(){
+  const grid = document.getElementById('statsGrid');
+  if(!grid) return;
+  const c = state.counters;
+  const stats = [
+    { icon:'🏆', value:c.wins || 0,          label:'Combats gagnés' },
+    { icon:'💀', value:c.losses || 0,        label:'Combats perdus' },
+    { icon:'⚔️', value:c.battles || 0,       label:'Combats lancés' },
+    { icon:'🔥', value:c.maxStreak || 0,     label:'Meilleure série de victoires' },
+    { icon:'📦', value:c.boxesOpened || 0,   label:'Boîtes ouvertes' },
+    { icon:'🪙', value:c.itemsBought || 0,   label:'Objets achetés' },
+    { icon:'⭐', value:c.levelUps || 0,      label:'Niveaux gagnés' },
+    { icon:'📜', value:c.questsClaimed || 0, label:'Quêtes terminées' },
+    { icon:'🗝️', value:state.dungeon ? (state.dungeon.bestClear || 0) : 0, label:'Donjon terminé' },
+    { icon:'🏙️', value:state.dungeon2 ? (state.dungeon2.bestClear || 0) : 0, label:'Doricorp terminé' },
+    { icon:'🎖️', value:Object.values(state.badges || {}).filter(b => b.claimed).length, label:'Badges récupérés' },
+  ];
+  grid.innerHTML = stats.map(s => `
+    <div class="stat-card">
+      <span class="stat-icon">${s.icon}</span>
+      <div class="stat-value mono">${s.value}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>`).join('');
+}
 
 /* ====================== HEADER ====================== */
 function renderHeader(){
   document.getElementById('tokenCount').textContent = state.tokens;
-  document.getElementById('openBtn').disabled = state.tokens <= 0;
+  document.getElementById('openBtn').disabled = state.tokens <= 0 || boxCooldown;
   document.getElementById('totalEssence').textContent = totalEssence();
   document.getElementById('holyWaterCount').textContent = state.holyWater;
   const specialBtn = document.getElementById('specialOpenBtn');
-  if(specialBtn) specialBtn.disabled = state.tokens < 50;
+  if(specialBtn) specialBtn.disabled = state.tokens < 100;
+  const squeezieBtn = document.getElementById('squeezieOpenBtn');
+  if(squeezieBtn) squeezieBtn.disabled = state.tokens < 100;
   if(typeof renderGamepass === 'function') renderGamepass();
 }
 
 /* ====================== BOITES ====================== */
-// Personnages jamais tirables dans les boîtes normales (exclusifs à la Boîte spéciale).
-const SPECIAL_BOX_ONLY_IDS = ['roi67', 'uzu'];
+// Personnages jamais tirables dans la boîte basique (exclusifs à une boîte spéciale).
+const SPECIAL_BOX_ONLY_IDS = ['roi67', 'uzu', 'squeezie', 'doga'];
+
+// Boîte basique : Neymar Dos Mokos (secret) a 0.1% de drop fixe, Enolan a 3% de drop fixe.
+// Le reste du pool se partage les 96.9% restants selon RARITY_WEIGHT, comme avant.
+const NEYMAR_DROP_RATE = 0.001;
+const ENOLAN_DROP_RATE = 0.03;
 
 function pickCharacter(){
-  const pool = CHARACTERS.filter(c => !SPECIAL_BOX_ONLY_IDS.includes(c.id));
+  const roll = Math.random();
+  if(roll < NEYMAR_DROP_RATE) return CHARACTERS.find(c => c.id === 'neymarmokos');
+  if(roll < NEYMAR_DROP_RATE + ENOLAN_DROP_RATE) return CHARACTERS.find(c => c.id === 'enolan');
+
+  const pool = CHARACTERS.filter(c => !SPECIAL_BOX_ONLY_IDS.includes(c.id) && c.id !== 'neymarmokos' && c.id !== 'enolan');
   const total = pool.reduce((s,c) => s + RARITY_WEIGHT[c.rarity], 0);
-  let roll = Math.random() * total;
+  let r = Math.random() * total;
   for(const c of pool){
     const w = RARITY_WEIGHT[c.rarity];
-    if(roll < w) return c;
-    roll -= w;
+    if(r < w) return c;
+    r -= w;
   }
   return pool[0];
 }
 
 function openBox(){
+  if(boxCooldown) return;
   if(state.tokens <= 0) return;
+  boxCooldown = true;
   state.tokens--;
   renderHeader();
 
   const box = document.getElementById('box');
-  document.getElementById('openBtn').disabled = true;
+  const boxWrap = document.getElementById('boxWrap');
+  boxWrap.style.pointerEvents = 'none';
   box.classList.add('shaking');
 
   setTimeout(() => {
@@ -1347,6 +1517,12 @@ function openBox(){
     renderGrid();
     checkBadgeNotifications();
   }, 900);
+
+  setTimeout(() => {
+    boxCooldown = false;
+    boxWrap.style.pointerEvents = '';
+    renderHeader();
+  }, 1000);
 }
 
 function showReveal(c){
@@ -1475,8 +1651,8 @@ document.getElementById('multiRevealBackdrop').addEventListener('click', (ev) =>
 
 /* ====================== BOÎTE SPÉCIALE (Allah / Uzu) ====================== */
 function openSpecialBox(){
-  if(state.tokens < 50) return;
-  state.tokens -= 50;
+  if(state.tokens < 100) return;
+  state.tokens -= 100;
   renderHeader();
   const box = document.getElementById('specialBox');
   document.getElementById('specialOpenBtn').disabled = true;
@@ -1493,11 +1669,37 @@ function openSpecialBox(){
     renderHeader();
     renderQuests();
     renderGrid();
-    document.getElementById('specialOpenBtn').disabled = state.tokens < 50;
+    document.getElementById('specialOpenBtn').disabled = state.tokens < 100;
   }, 900);
 }
 document.getElementById('specialOpenBtn').addEventListener('click', openSpecialBox);
 document.getElementById('specialBoxWrap').addEventListener('click', openSpecialBox);
+
+/* ====================== BOÎTE SPÉCIALE (Squeezie / Doga) ====================== */
+function openSpecialBox2(){
+  if(state.tokens < 100) return;
+  state.tokens -= 100;
+  renderHeader();
+  const box = document.getElementById('squeezieBox');
+  document.getElementById('squeezieOpenBtn').disabled = true;
+  box.classList.add('shaking');
+  setTimeout(() => {
+    box.classList.remove('shaking');
+    const roll = Math.random() * 100;
+    const character = CHARACTERS.find(c => c.id === (roll < 0.01 ? 'squeezie' : 'doga'));
+    const e = ensureEntry(character.id);
+    e.count++;
+    state.counters.boxesOpened++;
+    save();
+    showReveal(character);
+    renderHeader();
+    renderQuests();
+    renderGrid();
+    document.getElementById('squeezieOpenBtn').disabled = state.tokens < 100;
+  }, 900);
+}
+document.getElementById('squeezieOpenBtn').addEventListener('click', openSpecialBox2);
+document.getElementById('squeezieBoxWrap').addEventListener('click', openSpecialBox2);
 
 /* ====================== COLLECTION ====================== */
 function renderGrid(){
@@ -1818,7 +2020,7 @@ document.getElementById('equipPickerBackdrop').addEventListener('click', (ev) =>
 function renderShop(){
   const grid = document.getElementById('shopGrid');
   grid.innerHTML = '';
-  ITEMS.forEach(tpl => {
+  ITEMS.filter(tpl => !tpl.dungeonOnly).forEach(tpl => {
     const bonusText = Object.entries(tpl.bonus).map(([k,v]) => `+${v} ${k.toUpperCase()}`).join(' ');
     const div = document.createElement('div');
     div.className = 'item-card';
@@ -2217,7 +2419,9 @@ function endBattle(playerWon){
     );
     if(flawless) xpGain = Math.round(xpGain * 1.25);
 
-    const reward = Math.round((2 + Math.floor(state.winStreak / 3)) * diffSettings.rewardMult * (boost ? boost.rewardMult : 1));
+    // Jetons : plus aucune dépendance à la winstreak. Le gain ne dépend que de la difficulté
+    // choisie et de la force de l'ennemi battu (boost elite/golden/divin/secret).
+    const reward = Math.round(BASE_TOKEN_REWARD * diffSettings.rewardMult * (boost ? boost.rewardMult : 1));
     state.tokens += reward;
 
     let boostEssence = 0;
@@ -2241,6 +2445,7 @@ function endBattle(playerWon){
       </div>`;
   } else {
     state.winStreak = 0;
+    state.counters.losses = (state.counters.losses || 0) + 1;
     save();
     addLog(`${c.name} est K.O.`, 'sys');
     zone.innerHTML = `<div class="result-badge lose">DEFAITE</div>
@@ -2269,6 +2474,56 @@ const DUNGEON_CLEAR_BONUS = { tokens:60, essence:20 };
 
 let dungeonFighterId = null;
 let dungeonRun = null; // { charId, stats, hp, skillReady, index, enemy:{...} }
+
+// Écran de sélection : propose les deux donjons, Doricorp affiche un cadenas tant que
+// le Donjon (Empire flotté 7) n'a pas été terminé une première fois.
+function renderDungeonSelect(){
+  dungeonRun = null;
+  dungeon2Run = null;
+  document.getElementById('dungeonSelectZone').style.display = 'block';
+  document.getElementById('donjonSetup').style.display = 'none';
+  document.getElementById('donjonStage').style.display = 'none';
+  document.getElementById('donjon2Setup').style.display = 'none';
+  document.getElementById('donjon2Stage').style.display = 'none';
+
+  const unlocked2 = isDungeon2Unlocked();
+  const picker = document.getElementById('dungeonSelectPicker');
+  picker.innerHTML = `
+    <div class="pick-card" id="selectDungeon1Card" style="cursor:pointer;">
+      <span class="icon">🗝️</span>
+      <div class="name">Empire flotté 7</div>
+      <div class="lvl">${(state.dungeon.bestClear || 0) >= 1 ? '✓ Terminé' : '7 ennemis'}</div>
+    </div>
+    <div class="pick-card" id="selectDungeon2Card" style="cursor:${unlocked2 ? 'pointer' : 'not-allowed'}; opacity:${unlocked2 ? '1' : '.5'};">
+      <span class="icon">${unlocked2 ? '🏙️' : '🔒'}</span>
+      <div class="name">Doricorp</div>
+      <div class="lvl">${unlocked2 ? ((state.dungeon2.bestClear || 0) >= 1 ? '✓ Terminé' : '7 ennemis') : 'Termine Empire flotté 7'}</div>
+    </div>
+  `;
+  document.getElementById('selectDungeon1Card').addEventListener('click', () => {
+    document.getElementById('dungeonSelectZone').style.display = 'none';
+    renderDungeonPicker();
+  });
+  document.getElementById('selectDungeon2Card').addEventListener('click', () => {
+    if(!isDungeon2Unlocked()){
+      toast('Doricorp verrouillé', "Termine d'abord le Donjon (Empire flotté 7).");
+      return;
+    }
+    document.getElementById('dungeonSelectZone').style.display = 'none';
+    renderDungeon2Picker();
+  });
+}
+
+document.getElementById('donjonBackBtn').addEventListener('click', () => {
+  dungeonRun = null;
+  dungeonFighterId = null;
+  renderDungeonSelect();
+});
+document.getElementById('donjon2BackBtn').addEventListener('click', () => {
+  dungeon2Run = null;
+  dungeon2FighterId = null;
+  renderDungeonSelect();
+});
 
 function renderDungeonPicker(){
   const picker = document.getElementById('donjonPicker');
@@ -2438,11 +2693,34 @@ function reEnableDungeonActions(){
   document.getElementById('dSkillBtn').disabled = !dungeonRun.skillReady;
 }
 
+// Objets exclusifs au donjon : 0.5% de drop chacun, uniquement à partir du 3e ennemi
+// (les ennemis 1 et 2, index 0 et 1, ne peuvent jamais les faire dropper).
+const DUNGEON_DROP_ITEM_IDS = ['w_dungeon', 'a_dungeon', 'c_dungeon'];
+const DUNGEON_DROP_CHANCE = 0.005;
+const DUNGEON_DROP_MIN_ENEMY_INDEX = 2;
+
+function rollDungeonItemDrops(enemyIndex){
+  if(enemyIndex < DUNGEON_DROP_MIN_ENEMY_INDEX) return [];
+  const drops = [];
+  DUNGEON_DROP_ITEM_IDS.forEach(templateId => {
+    if(Math.random() < DUNGEON_DROP_CHANCE){
+      state.items.push({ instanceId: 'it' + (state.itemSeq++), templateId });
+      drops.push(ITEMS.find(i => i.id === templateId));
+    }
+  });
+  return drops;
+}
+
 function dungeonEnemyDown(){
   const p = dungeonRun;
   const tpl = p.enemy.tpl;
   addDungeonLog(`${tpl.name} est K.O. !`, 'sys');
   state.tokens += DUNGEON_REWARD_PER_ENEMY * (tpl.boss ? 3 : 1);
+  const drops = rollDungeonItemDrops(p.index);
+  drops.forEach(item => {
+    addDungeonLog(`Objet obtenu : ${item.name} !`, 'sys');
+    toast('Objet rare obtenu !', item.name);
+  });
   save();
   renderHeader();
 
@@ -2454,7 +2732,9 @@ function dungeonEnemyDown(){
   }
   document.getElementById('donjonActionZone').style.display = 'none';
   document.getElementById('donjonResultZone').innerHTML = `<div class="result-badge win">${tpl.name} VAINCU</div>
-    <div class="result-rewards">+<b>${DUNGEON_REWARD_PER_ENEMY * (tpl.boss?3:1)}</b> jetons · PV restants conservés pour le prochain ennemi</div>
+    <div class="result-rewards">+<b>${DUNGEON_REWARD_PER_ENEMY * (tpl.boss?3:1)}</b> jetons · PV restants conservés pour le prochain ennemi
+      ${drops.length ? ` · <b style="color:var(--mythique)">${drops.map(d => d.name).join(', ')}</b> obtenu(s) !` : ''}
+    </div>
     <div style="text-align:center;"><button class="cta blue" id="dungeonNextBtn">Affronter le prochain ennemi</button></div>`;
   document.getElementById('dungeonNextBtn').addEventListener('click', spawnDungeonEnemy);
 }
@@ -2467,6 +2747,7 @@ function dungeonRunOver(cleared){
     state.tokens += DUNGEON_CLEAR_BONUS.tokens;
     const e = ensureEntry(c.id);
     e.essence += DUNGEON_CLEAR_BONUS.essence;
+    const wasUnlocked = isDungeon2Unlocked();
     state.dungeon.bestClear = Math.max(state.dungeon.bestClear || 0, 1);
     save();
     renderHeader();
@@ -2474,7 +2755,12 @@ function dungeonRunOver(cleared){
     zone.innerHTML = `<div class="result-badge win">DONJON TERMINÉ</div>
       <div class="result-rewards">+<b>${DUNGEON_CLEAR_BONUS.tokens}</b> jetons · +<b style="color:var(--essence)">${DUNGEON_CLEAR_BONUS.essence}</b> essence pour ${c.name}</div>`;
     checkBadgeNotifications();
+    if(!wasUnlocked && isDungeon2Unlocked()){
+      toast('Doricorp débloqué !', "Un nouveau donjon t'attend dans l'onglet Doricorp.");
+    }
   } else {
+    state.counters.losses = (state.counters.losses || 0) + 1;
+    save();
     addDungeonLog(`${c.name} est K.O. face à ${dungeonRun.enemy.tpl.name}.`, 'sys');
     zone.innerHTML = `<div class="result-badge lose">DEFAITE — Ennemi ${dungeonRun.index+1}/${DUNGEON_ENEMIES.length}</div>
       <div class="result-rewards">Tu conserves les jetons déjà gagnés sur cette run.</div>`;
@@ -2482,6 +2768,276 @@ function dungeonRunOver(cleared){
   renderGrid();
   renderQuests();
   dungeonRun = null;
+}
+
+/* ====================== DONJON 2 : DORICORP ====================== */
+// Débloqué uniquement une fois le Donjon 1 (Empire flotté 7) terminé au moins une fois.
+// Même format que le Donjon 1 : 7 ennemis fixes à enchaîner sans régénération de PV entre chaque combat,
+// mais globalement plus difficile et plus généreux en récompenses.
+const DUNGEON2_ENEMIES = [
+  { name:'Je suis en colère', icon:'😡', base:{hp:1600, atk:55,  def:20,  spd:16}, skill:{name:'Rage aveugle',        mult:1.7} },
+  { name:'Aurélie B',         icon:'💅', base:{hp:2400, atk:75,  def:24,  spd:20}, skill:{name:'Répartie cinglante',  mult:1.8} },
+  { name:'Uzu (god form)',    icon:'🐋', base:{hp:4200, atk:130, def:40,  spd:22}, skill:{name:'Vague divine',        mult:2.0} },
+  { name:'Ksbr',               icon:'🥷', base:{hp:5800, atk:160, def:45,  spd:25}, skill:{name:'Combo ravageur',      mult:2.0} },
+  { name:'Shika',              icon:'🦌', base:{hp:7500, atk:210, def:40,  spd:30}, skill:{name:'Instinct sauvage',    mult:2.1} },
+  { name:'Léa',                icon:'🦋', base:{hp:9500, atk:260, def:60,  spd:24}, skill:{name:'Jugement',            mult:2.2} },
+  { name:'Dorimann',           icon:'👹', base:{hp:15000,atk:380, def:180, spd:28}, skill:{name:'Suprématie Doricorp', mult:2.5}, boss:true },
+];
+const DUNGEON2_REWARD_PER_ENEMY = 9;
+const DUNGEON2_CLEAR_BONUS = { tokens:90, essence:30 };
+
+function isDungeon2Unlocked(){
+  return (state.dungeon.bestClear || 0) >= 1;
+}
+
+let dungeon2FighterId = null;
+let dungeon2Run = null; // { charId, stats, hp, skillReady, index, enemy:{...} }
+
+function renderDungeon2Picker(){
+  // Sécurité : si jamais appelé alors que non débloqué, on renvoie vers l'écran de sélection.
+  if(!isDungeon2Unlocked()){
+    renderDungeonSelect();
+    return;
+  }
+  document.getElementById('donjon2Setup').style.display = 'block';
+  document.getElementById('donjon2Stage').style.display = 'none';
+
+  const picker = document.getElementById('donjon2Picker');
+  const owned = CHARACTERS.filter(c => state.collection[c.id] && state.collection[c.id].count > 0);
+
+  if(owned.length === 0){
+    picker.innerHTML = `<div class="empty-note" style="grid-column:1/-1;">Tu n'as encore aucun combattant. Va ouvrir une boite d'abord.</div>`;
+    document.getElementById('donjon2StartBtn').disabled = true;
+    return;
+  }
+
+  picker.innerHTML = '';
+  owned.forEach(c => {
+    const e = ensureEntry(c.id);
+    const need = xpToNext(e.level);
+    const pct = Math.min(100, Math.round((e.xp / need) * 100));
+    const div = document.createElement('div');
+    div.className = 'pick-card' + (dungeon2FighterId === c.id ? ' selected' : '');
+    div.innerHTML = `
+      <span class="icon">${c.icon}</span>
+      <div class="name">${c.name}</div>
+      <div class="lvl">Niv. ${e.level}</div>
+      <div class="mini-xp"><div class="mini-xp-fill" style="width:${pct}%"></div></div>
+    `;
+    div.addEventListener('click', () => {
+      dungeon2FighterId = c.id;
+      renderDungeon2Picker();
+    });
+    picker.appendChild(div);
+  });
+  document.getElementById('donjon2StartBtn').disabled = !dungeon2FighterId;
+}
+
+document.getElementById('donjon2StartBtn').addEventListener('click', startDungeon2);
+document.getElementById('donjon2QuitBtn').addEventListener('click', () => {
+  dungeon2Run = null;
+  dungeon2FighterId = null;
+  renderDungeon2Picker();
+});
+
+function startDungeon2(){
+  const playerChar = CHARACTERS.find(c => c.id === dungeon2FighterId);
+  const pStats = computeEffectiveStats(playerChar.id);
+  dungeon2Run = { charId: playerChar.id, stats: pStats, hp: pStats.hp, skillReady:true, index:0, enemy:null };
+
+  document.getElementById('donjon2Setup').style.display = 'none';
+  document.getElementById('donjon2Stage').style.display = 'block';
+  document.getElementById('donjon2Log').innerHTML = '';
+  addDungeon2Log('Tu entres dans Doricorp. Aucune régénération entre les ennemis !', 'sys');
+  spawnDungeon2Enemy();
+}
+
+function spawnDungeon2Enemy(){
+  const idx = dungeon2Run.index;
+  const tpl = DUNGEON2_ENEMIES[idx];
+  // Doricorp est nettement plus corsé que l'Empire flotté 7, avec une montée en puissance
+  // un peu plus marquée entre chaque ennemi.
+  const scale = (1 + idx * 0.22) * 1.15;
+  const eStats = {
+    hp: Math.round(tpl.base.hp * scale),
+    atk: Math.round(tpl.base.atk * scale),
+    def: Math.round(tpl.base.def * scale),
+    spd: Math.round(tpl.base.spd * scale),
+  };
+  dungeon2Run.enemy = { tpl, stats: eStats, hp: eStats.hp, skillReady:true };
+
+  const playerChar = CHARACTERS.find(c => c.id === dungeon2Run.charId);
+  document.getElementById('donjon2EnemyCount').textContent = `Ennemi ${idx+1} / ${DUNGEON2_ENEMIES.length}${tpl.boss ? ' — BOSS' : ''}`;
+  document.getElementById('d2pIcon').textContent = playerChar.icon;
+  document.getElementById('d2pIcon').style.color = RARITY_COLOR[playerChar.rarity];
+  document.getElementById('d2pName').textContent = playerChar.name;
+  document.getElementById('d2eIcon').textContent = tpl.icon;
+  document.getElementById('d2eIcon').style.color = tpl.boss ? 'var(--blood)' : 'var(--muted)';
+  document.getElementById('d2eName').textContent = tpl.name + (tpl.boss ? ' (boss)' : '');
+  document.getElementById('donjon2ActionZone').style.display = 'flex';
+  document.getElementById('donjon2ResultZone').innerHTML = '';
+  document.getElementById('d2AtkBtn').disabled = false;
+  document.getElementById('d2SkillBtn').disabled = !dungeon2Run.skillReady;
+  updateDungeon2HpBars();
+  addDungeon2Log(`${tpl.name} se dresse devant toi !`, 'sys');
+}
+
+function updateDungeon2HpBars(){
+  const p = dungeon2Run, e = dungeon2Run.enemy;
+  const pPct = Math.max(0, Math.round((p.hp / p.stats.hp) * 100));
+  const ePct = Math.max(0, Math.round((e.hp / e.stats.hp) * 100));
+  document.getElementById('d2pHpBar').style.width = pPct + '%';
+  document.getElementById('d2eHpBar').style.width = ePct + '%';
+  document.getElementById('d2pHpText').textContent = `${Math.max(0,p.hp)} / ${p.stats.hp} PV`;
+  document.getElementById('d2eHpText').textContent = `${Math.max(0,e.hp)} / ${e.stats.hp} PV`;
+}
+
+function addDungeon2Log(text, cls){
+  const log = document.getElementById('donjon2Log');
+  const line = document.createElement('div');
+  if(cls) line.className = cls;
+  line.textContent = text;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+document.getElementById('d2AtkBtn').addEventListener('click', () => dungeon2Action('attack'));
+document.getElementById('d2SkillBtn').addEventListener('click', () => dungeon2Action('skill'));
+
+function dungeon2Action(type){
+  if(!dungeon2Run || !dungeon2Run.enemy) return;
+  document.getElementById('donjon2ActionZone').querySelectorAll('button').forEach(b => b.disabled = true);
+
+  const p = dungeon2Run, e = dungeon2Run.enemy;
+  const playerChar = CHARACTERS.find(c => c.id === p.charId);
+  const playerFirst = p.stats.spd >= e.stats.spd;
+
+  const doPlayerHit = () => {
+    let mult = 1, label = 'attaque';
+    if(type === 'skill' && p.skillReady){
+      mult = playerChar.skill.mult;
+      label = playerChar.skill.name;
+      p.skillReady = false;
+    }
+    const dmg = computeDamage(p.stats, e.stats, mult);
+    e.hp -= dmg;
+    addDungeon2Log(`${playerChar.name} utilise ${label} -> ${dmg} degats`, 'me');
+    updateDungeon2HpBars();
+  };
+  const doEnemyHit = () => {
+    if(e.hp <= 0) return;
+    let mult = 1, label = 'attaque';
+    if(e.skillReady && Math.random() < 0.5){
+      mult = e.tpl.skill.mult;
+      label = e.tpl.skill.name;
+      e.skillReady = false;
+    }
+    const dmg = computeDamage(e.stats, p.stats, mult);
+    p.hp -= dmg;
+    addDungeon2Log(`${e.tpl.name} utilise ${label} -> ${dmg} degats`, 'foe');
+    updateDungeon2HpBars();
+  };
+  const checkEnd = () => {
+    if(e.hp <= 0){ dungeon2EnemyDown(); return true; }
+    if(p.hp <= 0){ dungeon2RunOver(false); return true; }
+    return false;
+  };
+
+  if(playerFirst){
+    doPlayerHit();
+    if(checkEnd()) return;
+    setTimeout(() => {
+      doEnemyHit();
+      if(checkEnd()) return;
+      reEnableDungeon2Actions();
+    }, 500);
+  } else {
+    setTimeout(() => {
+      doEnemyHit();
+      if(checkEnd()) return;
+      doPlayerHit();
+      if(checkEnd()) return;
+      reEnableDungeon2Actions();
+    }, 400);
+  }
+}
+
+function reEnableDungeon2Actions(){
+  document.getElementById('d2AtkBtn').disabled = false;
+  document.getElementById('d2SkillBtn').disabled = !dungeon2Run.skillReady;
+}
+
+// Objets exclusifs à Doricorp : 0.5% de drop chacun, uniquement à partir du 3e ennemi
+// (les ennemis 1 et 2, index 0 et 1, ne peuvent jamais les faire dropper).
+const DUNGEON2_DROP_ITEM_IDS = ['w_doricorp', 'a_doricorp', 'c_doricorp'];
+const DUNGEON2_DROP_CHANCE = 0.005;
+const DUNGEON2_DROP_MIN_ENEMY_INDEX = 2;
+
+function rollDungeon2ItemDrops(enemyIndex){
+  if(enemyIndex < DUNGEON2_DROP_MIN_ENEMY_INDEX) return [];
+  const drops = [];
+  DUNGEON2_DROP_ITEM_IDS.forEach(templateId => {
+    if(Math.random() < DUNGEON2_DROP_CHANCE){
+      state.items.push({ instanceId: 'it' + (state.itemSeq++), templateId });
+      drops.push(ITEMS.find(i => i.id === templateId));
+    }
+  });
+  return drops;
+}
+
+function dungeon2EnemyDown(){
+  const p = dungeon2Run;
+  const tpl = p.enemy.tpl;
+  addDungeon2Log(`${tpl.name} est K.O. !`, 'sys');
+  state.tokens += DUNGEON2_REWARD_PER_ENEMY * (tpl.boss ? 3 : 1);
+  const drops = rollDungeon2ItemDrops(p.index);
+  drops.forEach(item => {
+    addDungeon2Log(`Objet obtenu : ${item.name} !`, 'sys');
+    toast('Objet rare obtenu !', item.name);
+  });
+  save();
+  renderHeader();
+
+  p.index++;
+  // IMPORTANT : pas de régénération des PV du joueur entre deux ennemis.
+  if(p.index >= DUNGEON2_ENEMIES.length){
+    dungeon2RunOver(true);
+    return;
+  }
+  document.getElementById('donjon2ActionZone').style.display = 'none';
+  document.getElementById('donjon2ResultZone').innerHTML = `<div class="result-badge win">${tpl.name} VAINCU</div>
+    <div class="result-rewards">+<b>${DUNGEON2_REWARD_PER_ENEMY * (tpl.boss?3:1)}</b> jetons · PV restants conservés pour le prochain ennemi
+      ${drops.length ? ` · <b style="color:var(--mythique)">${drops.map(d => d.name).join(', ')}</b> obtenu(s) !` : ''}
+    </div>
+    <div style="text-align:center;"><button class="cta blue" id="dungeon2NextBtn">Affronter le prochain ennemi</button></div>`;
+  document.getElementById('dungeon2NextBtn').addEventListener('click', spawnDungeon2Enemy);
+}
+
+function dungeon2RunOver(cleared){
+  document.getElementById('donjon2ActionZone').style.display = 'none';
+  const zone = document.getElementById('donjon2ResultZone');
+  const c = CHARACTERS.find(x => x.id === dungeon2Run.charId);
+  if(cleared){
+    state.tokens += DUNGEON2_CLEAR_BONUS.tokens;
+    const e = ensureEntry(c.id);
+    e.essence += DUNGEON2_CLEAR_BONUS.essence;
+    state.dungeon2.bestClear = Math.max(state.dungeon2.bestClear || 0, 1);
+    save();
+    renderHeader();
+    addDungeon2Log(`Dorimann est K.O. ! Doricorp est vaincu !`, 'sys');
+    zone.innerHTML = `<div class="result-badge win">DORICORP TERMINÉ</div>
+      <div class="result-rewards">+<b>${DUNGEON2_CLEAR_BONUS.tokens}</b> jetons · +<b style="color:var(--essence)">${DUNGEON2_CLEAR_BONUS.essence}</b> essence pour ${c.name}</div>`;
+    checkBadgeNotifications();
+  } else {
+    state.counters.losses = (state.counters.losses || 0) + 1;
+    save();
+    addDungeon2Log(`${c.name} est K.O. face à ${dungeon2Run.enemy.tpl.name}.`, 'sys');
+    zone.innerHTML = `<div class="result-badge lose">DEFAITE — Ennemi ${dungeon2Run.index+1}/${DUNGEON2_ENEMIES.length}</div>
+      <div class="result-rewards">Tu conserves les jetons déjà gagnés sur cette run.</div>`;
+  }
+  renderGrid();
+  renderQuests();
+  dungeon2Run = null;
 }
 
 /* ====================== QUETES ====================== */
@@ -2606,17 +3162,17 @@ function getOwnedItemInstances(){
   return list;
 }
 function ownsAllItemsOfSlot(slot){
-  const ids = ITEMS.filter(i => i.slot === slot).map(i => i.id);
+  const ids = ITEMS.filter(i => i.slot === slot && !i.dungeonOnly).map(i => i.id);
   const owned = new Set(getOwnedItemInstances().map(it => it.templateId));
   return ids.every(id => owned.has(id));
 }
 function allItemsOfSlotUpgraded(slot, minLevel){
-  const ids = ITEMS.filter(i => i.slot === slot).map(i => i.id);
+  const ids = ITEMS.filter(i => i.slot === slot && !i.dungeonOnly).map(i => i.id);
   const instances = getOwnedItemInstances();
   return ids.every(id => instances.some(it => it.templateId === id && (it.upgrade || 0) >= minLevel));
 }
 function allItemsUpgraded(minLevel){
-  const ids = ITEMS.map(i => i.id);
+  const ids = ITEMS.filter(i => !i.dungeonOnly).map(i => i.id);
   const instances = getOwnedItemInstances();
   return ids.every(id => instances.some(it => it.templateId === id && (it.upgrade || 0) >= minLevel));
 }
@@ -2632,13 +3188,13 @@ const BADGES = [
     desc:'Ouvre ta première boîte.', reward:3, target:1,
     progress:() => state.counters.boxesOpened },
   { id:'b_first_win',    rarity:'commun', icon:'🥊', name:'Première victoire',
-    desc:'Gagne ton premier combat.', reward:5, target:1,
+    desc:'Gagne ton premier combat.', reward:3, target:1,
     progress:() => state.counters.wins },
   { id:'b_trio',         rarity:'commun', icon:'👥', name:'Trio de choc',
-    desc:'Possède 3 personnages différents.', reward:10, target:3,
+    desc:'Possède 3 personnages différents.', reward:4, target:3,
     progress:() => distinctOwnedCharactersCount() },
   { id:'b_lvl5_one',     rarity:'commun', icon:'⭐', name:'Apprenti niveau 5',
-    desc:'Un personnage atteint le niveau 5.', reward:50, target:1,
+    desc:'Un personnage atteint le niveau 5.', reward:4, target:1,
     progress:() => countCharactersAtLevel(5) >= 1 ? 1 : 0 },
   { id:'b_starter_kit',  rarity:'commun', icon:'🎒', name:'Panoplie de départ',
     desc:'Possède au moins une arme, une armure et une amulette.', reward:4, target:3,
@@ -2652,82 +3208,85 @@ const BADGES = [
 
   /* ---------- RARE ---------- */
   { id:'b_lvl5_five',    rarity:'rare', icon:'🌟', name:'Cinq étoiles',
-    desc:'Avoir 5 personnages niveau 5.', reward:500, target:5,
+    desc:'Avoir 5 personnages niveau 5.', reward:8, target:5,
     progress:() => countCharactersAtLevel(5) },
   { id:'b_all_weapons',  rarity:'rare', icon:'⚔️', name:'Arsenal complet',
-    desc:'Possède toutes les armes.', reward:30, target:1,
+    desc:'Possède toutes les armes.', reward:8, target:1,
     progress:() => ownsAllItemsOfSlot('arme') ? 1 : 0 },
   { id:'b_all_armors',   rarity:'rare', icon:'🛡️', name:'Blindage total',
-    desc:'Possède toutes les armures.', reward:30, target:1,
+    desc:'Possède toutes les armures.', reward:8, target:1,
     progress:() => ownsAllItemsOfSlot('armure') ? 1 : 0 },
   { id:'b_all_amulets',  rarity:'rare', icon:'🔮', name:'Amulettes complètes',
-    desc:'Possède toutes les amulettes.', reward:30, target:1,
+    desc:'Possède toutes les amulettes.', reward:8, target:1,
     progress:() => ownsAllItemsOfSlot('amulette') ? 1 : 0 },
   { id:'b_wins20',       rarity:'rare', icon:'🏆', name:'Vétéran',
-    desc:'Gagne 20 combats.', reward:100, target:20,
+    desc:'Gagne 20 combats.', reward:10, target:20,
     progress:() => state.counters.wins },
   { id:'b_shiny_one',    rarity:'rare', icon:'✨', name:'Premier éclat',
-    desc:'Un personnage atteint le palier Shiny.', reward:500, target:1,
+    desc:'Un personnage atteint le palier Shiny.', reward:10, target:1,
     progress:() => countCharactersAtFusionTier('shiny') >= 1 ? 1 : 0 },
 
   /* ---------- EPIQUE ---------- */
   { id:'b_lvl5_ten',       rarity:'epique', icon:'🌠', name:'Dix étoiles',
-    desc:'Avoir 10 personnages niveau 5.', reward:500, target:10,
+    desc:'Avoir 10 personnages niveau 5.', reward:16, target:10,
     progress:() => countCharactersAtLevel(5) },
   { id:'b_weapons_forged', rarity:'epique', icon:'🔥', name:'Armes forgées',
-    desc:'Chaque arme améliorée au niveau 5 à la forge.', reward:80, target:1,
+    desc:'Chaque arme améliorée au niveau 5 à la forge.', reward:18, target:1,
     progress:() => allItemsOfSlotUpgraded('arme', 5) ? 1 : 0 },
   { id:'b_armors_forged',  rarity:'epique', icon:'🔥', name:'Armures forgées',
-    desc:'Chaque armure améliorée au niveau 5 à la forge.', reward:80, target:1,
+    desc:'Chaque armure améliorée au niveau 5 à la forge.', reward:18, target:1,
     progress:() => allItemsOfSlotUpgraded('armure', 5) ? 1 : 0 },
   { id:'b_amulets_forged', rarity:'epique', icon:'🔥', name:'Amulettes forgées',
-    desc:'Chaque amulette améliorée au niveau 5 à la forge.', reward:80, target:1,
+    desc:'Chaque amulette améliorée au niveau 5 à la forge.', reward:18, target:1,
     progress:() => allItemsOfSlotUpgraded('amulette', 5) ? 1 : 0 },
   { id:'b_lvl10_five',     rarity:'epique', icon:'🏔️', name:'Cinq sommets',
-    desc:'Avoir 5 personnages niveau 10.', reward:750, target:5,
+    desc:'Avoir 5 personnages niveau 10.', reward:16, target:5,
+    progress:() => countCharactersAtLevel(10) },
+  { id:'b_celeste_one',    rarity:'epique', icon:'🌠', name:'Lumière céleste',
+    desc:'Un personnage atteint le palier Céleste.', reward:18, target:1,
+    progress:() => countCharactersAtFusionTier('celeste') >= 1 ? 1 : 0 },
+
+  /* ---------- LEGENDAIRE ---------- */
+  { id:'b_lvl10_ten',    rarity:'legendaire', icon:'🏔️', name:'Dix sommets',
+    desc:'Avoir 10 personnages niveau 10.', reward:25, target:10,
     progress:() => countCharactersAtLevel(10) },
   { id:'b_all_chars',    rarity:'legendaire', icon:'📖', name:'Panthéon',
     desc:'Possède tous les personnages.', reward:30, target:CHARACTERS.length,
     progress:() => distinctOwnedCharactersCount() },
-
-  /* ---------- LEGENDAIRE ---------- */
-  { id:'b_lvl10_ten',    rarity:'legendaire', icon:'🏔️', name:'Dix sommets',
-    desc:'Avoir 10 personnages niveau 10.', reward:1000, target:10,
-    progress:() => countCharactersAtLevel(10) },
-  { id:'b_celeste_one',    rarity:'epique', icon:'🌠', name:'Lumière céleste',
-    desc:'Un personnage atteint le palier Céleste.', reward:1000, target:1,
-    progress:() => countCharactersAtFusionTier('celeste') >= 1 ? 1 : 0 },
   { id:'b_shiny_three',  rarity:'legendaire', icon:'✨', name:'Trois éclats',
-    desc:'Trois personnages différents atteignent le palier Shiny.', reward:1000, target:3,
+    desc:'Trois personnages différents atteignent le palier Shiny.', reward:25, target:3,
     progress:() => countCharactersAtFusionTier('shiny') },
   { id:'b_wins50',       rarity:'legendaire', icon:'🏆', name:"Combattant d'élite",
     desc:'Gagne 50 combats.', reward:25, target:50,
     progress:() => state.counters.wins },
   { id:'b_variants20',   rarity:'legendaire', icon:'🎭', name:'Grand collectionneur',
-    desc:'Débloque 20 formes/variantes au total.', reward:1000, target:20,
+    desc:'Débloque 20 formes/variantes au total.', reward:25, target:20,
     progress:() => totalUnlockedVariants() },
   { id:'b_dungeon_clear',rarity:'legendaire', icon:'🗝️', name:'Explorateur du néant',
-    desc:"Termine le Donjon de l'Empire flotté 7.", reward:1500, target:1,
+    desc:"Termine le Donjon de l'Empire flotté 7.", reward:22, target:1,
     progress:() => (state.dungeon.bestClear || 0) >= 1 ? 1 : 0 },
+  { id:'b_dungeon2_clear',rarity:'legendaire', icon:'🏙️', name:'Chute de Doricorp',
+    desc:"Termine le Donjon Doricorp.", reward:28, target:1,
+    progress:() => (state.dungeon2 && state.dungeon2.bestClear || 0) >= 1 ? 1 : 0 },
 
   /* ---------- MYTHIQUE (les plus difficiles) ---------- */
   { id:'b_enolan_67',        rarity:'mythique', icon:'👺', name:"Le 67 d'Enolan",
-    desc:'Enolan atteint le palier "67".', reward:2500, target:1,
+    desc:'Enolan atteint le palier "67".', reward:40, target:1,
     progress:() => hasReachedFusionTier('enolan', 's67') ? 1 : 0 },
   { id:'b_moko_one',         rarity:'mythique', icon:'🍌', name:'Ascension ultime',
-    desc:'Un personnage atteint le palier Moko.', reward:2500, target:1,
+    desc:'Un personnage atteint le palier Moko.', reward:45, target:1,
     progress:() => countCharactersAtFusionTier('moko') >= 1 ? 1 : 0 },
   { id:'b_own_king',         rarity:'mythique', icon:'👑', name:'Le Roi est là',
-    desc:'Possède Allah.', reward:3000, target:1,
+    desc:'Possède Allah.', reward:35, target:1,
     progress:() => ownsCharacter('roi67') ? 1 : 0 },
   { id:'b_wins100',          rarity:'mythique', icon:'⚔️', name:'Sang et Légende',
-    desc:'Gagne 100 combats.', reward:300, target:100,
+    desc:'Gagne 100 combats.', reward:45, target:100,
     progress:() => state.counters.wins },
   { id:'b_master_forge',     rarity:'mythique', icon:'🔨', name:'Maître forgeron',
-    desc:'Tous les équipements (armes, armures, amulettes) améliorés au niveau 10.', reward:300, target:1,
+    desc:'Tous les équipements (armes, armures, amulettes) améliorés au niveau 10.', reward:40, target:1,
     progress:() => allItemsUpgraded(10) ? 1 : 0 },
   { id:'b_absolute_pantheon',rarity:'mythique', icon:'🌌', name:'Panthéon absolu',
-    desc:'Tous les personnages niveau 10+, et arsenal, blindage et amulettes complets.', reward:500, target:1,
+    desc:'Tous les personnages niveau 10+, et arsenal, blindage et amulettes complets.', reward:50, target:1,
     progress:() => (countCharactersAtLevel(10) >= CHARACTERS.length && ownsAllItemsOfSlot('arme') && ownsAllItemsOfSlot('armure') && ownsAllItemsOfSlot('amulette')) ? 1 : 0 },
 ];
 
@@ -2835,6 +3394,7 @@ renderGrid();
 renderPicker();
 renderQuests();
 renderBadges();
+renderStats();
 checkBadgeNotifications();
 </script>
 
