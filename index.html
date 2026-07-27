@@ -1080,7 +1080,7 @@ const CHARACTERS = [
     base:{hp:125, atk:15, def:20, spd:12}, skill:{name:'Ciao kombucha', mult:1.75} },
 
   { id:'enolan', name:'Enolan', icon:'⚡', rarity:'legendaire', flavor:"L'alcool est son maître , libre il est",
-    base:{hp:200, atk:45, def:10, spd:10}, skill:{name:'67', mult:3} },
+    base:{hp:200, atk:40, def:10, spd:10}, skill:{name:'67', mult:3} },
 
   { id:'lelouch', name:'Lelouch', icon:'♟️', rarity:'epique', flavor:"The polygamist",
     base:{hp:170, atk:24, def:11, spd:20}, skill:{name:'Violence conjugale', mult:2.2} },
@@ -1108,12 +1108,12 @@ const CHARACTERS = [
   // Personnage secret de la boîte basique : ne suit pas RARITY_WEIGHT, tiré via une
   // probabilité fixe de 0.1% directement dans pickCharacter().
   { id:'neymarmokos', name:'Neymar Dos Mokos', icon:'⚽', rarity:'secret', flavor:"Il a signé son transfert directement aux enfers.",
-    base:{hp:850, atk:130, def:90, spd:95}, skill:{name:'Carton rouge divin', mult:3.5} },
+    base:{hp:450, atk:75, def:20, spd:20}, skill:{name:'Carton rouge divin', mult:3.5} },
 
   // Personnages exclusifs à la Boîte Squeezie/Doga (voir openSpecialBox2) : poids
   // RARITY_WEIGHT = 0 donc ils ne peuvent jamais sortir des boîtes normales.
   { id:'squeezie', name:'Squeezie', icon:'🎥', rarity:'mythique', flavor:"100 millions d'abonnés, 0% de pitié au combat.",
-    base:{hp:666, atk:95, def:90, spd:85}, skill:{name:'Fisherman Squeezie', mult:3} },
+    base:{hp:666, atk:125, def:125, spd:125}, skill:{name:'Fisherman Squeezie', mult:3} },
 
   { id:'doga', name:'Doga', icon:'🐕', rarity:'commun', flavor:"Aboie plus fort qu'il ne mord.",
     base:{hp:1, atk:1, def:1, spd:1}, skill:{name:'Grognement inoffensif', mult:1.9} },
@@ -1181,14 +1181,14 @@ const ITEMS = [
 
   // Objets exclusifs au Donjon (Empire flotté 7) : ne s'achètent pas en boutique,
   // ils droppent à 0.5% chacun quand on bat un ennemi du donjon (voir dungeonEnemyDown).
-  { id:'w_dungeon', slot:'arme', name:"Lame de l'Empire flotté", icon:'🗡️', rarity:'mythique', bonus:{atk:40}, price:0, dungeonOnly:true },
-  { id:'a_dungeon', slot:'armure', name:"Cuirasse de l'Empire flotté", icon:'⚱️', rarity:'mythique', bonus:{def:38,hp:80}, price:0, dungeonOnly:true },
-  { id:'c_dungeon', slot:'amulette', name:"Amulette de l'Empire flotté", icon:'🌀', rarity:'mythique', bonus:{spd:22,atk:14}, price:0, dungeonOnly:true },
+  { id:'w_dungeon', slot:'arme', name:"Lame du roi Anis", icon:'🗡️', rarity:'secret', bonus:{atk:50}, price:0, dungeonOnly:true },
+  { id:'a_dungeon', slot:'armure', name:"Invocation du king", icon:'⚱️', rarity:'secret', bonus:{def:50,hp:100}, price:0, dungeonOnly:true },
+  { id:'c_dungeon', slot:'amulette', name:"Portail seven", icon:'🌀', rarity:'secret', bonus:{spd:30,atk:40}, price:0, dungeonOnly:true },
   // Objets exclusifs au Donjon 2 (Doricorp) : légèrement plus forts que ceux de l'Empire flotté 7,
   // même principe de drop à 0.5% chacun à partir du 3e ennemi (voir dungeon2EnemyDown).
-  { id:'w_doricorp', slot:'arme', name:"Lame de Doricorp", icon:'🗡️', rarity:'mythique', bonus:{atk:46}, price:0, dungeonOnly:true },
-  { id:'a_doricorp', slot:'armure', name:"Cuirasse de Doricorp", icon:'⚱️', rarity:'mythique', bonus:{def:44,hp:90}, price:0, dungeonOnly:true },
-  { id:'c_doricorp', slot:'amulette', name:"Amulette de Doricorp", icon:'🌀', rarity:'mythique', bonus:{spd:26,atk:18}, price:0, dungeonOnly:true },
+  { id:'w_doricorp', slot:'arme', name:"Negro sword", icon:'🗡️', rarity:'secret', bonus:{atk:200}, price:0, dungeonOnly:true },
+  { id:'a_doricorp', slot:'armure', name:"Cuirasse de Doricorp", icon:'⚱️', rarity:'secret', bonus:{def:110,hp:250}, price:0, dungeonOnly:true },
+  { id:'c_doricorp', slot:'amulette', name:"Demeure doricorp", icon:'🌀', rarity:'secret', bonus:{spd:70,atk:180}, price:0, dungeonOnly:true },
 ];
 const SLOT_LABEL = { arme:'Arme', armure:'Armure', amulette:'Amulette' };
 
@@ -1564,8 +1564,10 @@ function hasS67Fusion(){
 }
 const GAMEPASS = {
   x3:  { n:3,  cost:250,  reqText:'Avoir 3 personnages niveau 5',        check: () => countCharsAtLevel(5)  >= 3 },
-  x5:  { n:5,  cost:750,  reqText:'Avoir 3 personnages niveau 15',       check: () => countCharsAtLevel(15) >= 3 },
-  x10: { n:10, cost:2500, reqText:'Avoir 1 personnage avec la fusion 67', check: () => hasS67Fusion() },
+  x5:  { n:5,  cost:1000, reqText:'Avoir 5 personnages niveau 15 et 2 personnages niveau 20',
+    check: () => countCharsAtLevel(15) >= 5 && countCharsAtLevel(20) >= 2 },
+  x10: { n:10, cost:3500, reqText:'Avoir 1 personnage avec la fusion 67 et 5 personnages niveau 20',
+    check: () => hasS67Fusion() && countCharsAtLevel(20) >= 5 },
 };
 
 function buyGamepass(key){
@@ -2775,13 +2777,13 @@ function dungeonRunOver(cleared){
 // Même format que le Donjon 1 : 7 ennemis fixes à enchaîner sans régénération de PV entre chaque combat,
 // mais globalement plus difficile et plus généreux en récompenses.
 const DUNGEON2_ENEMIES = [
-  { name:'Je suis en colère', icon:'😡', base:{hp:2600, atk:55,  def:20,  spd:16}, skill:{name:'Rage aveugle',        mult:1.7} },
-  { name:'Aurélie B',         icon:'💅', base:{hp:3800, atk:75,  def:24,  spd:20}, skill:{name:'Répartie cinglante',  mult:1.8} },
-  { name:'Uzu (god form)',    icon:'🐋', base:{hp:5200, atk:130, def:40,  spd:22}, skill:{name:'Vague divine',        mult:2.0} },
-  { name:'Ksbr',               icon:'🥷', base:{hp:6800, atk:160, def:45,  spd:25}, skill:{name:'Combo ravageur',      mult:2.0} },
-  { name:'Shika',              icon:'🦌', base:{hp:8300, atk:210, def:40,  spd:30}, skill:{name:'Instinct sauvage',    mult:2.1} },
-  { name:'Léa',                icon:'🦋', base:{hp:10000, atk:260, def:60,  spd:24}, skill:{name:'Jugement',            mult:2.2} },
-  { name:'Dorimann',           icon:'👹', base:{hp:18000,atk:380, def:180, spd:28}, skill:{name:'Suprématie Doricorp', mult:2.5}, boss:true },
+  { name:'Je suis en colère', icon:'😡', base:{hp:1600, atk:55,  def:20,  spd:16}, skill:{name:'Rage aveugle',        mult:1.7} },
+  { name:'Aurélie B',         icon:'💅', base:{hp:2400, atk:75,  def:24,  spd:20}, skill:{name:'Répartie cinglante',  mult:1.8} },
+  { name:'Uzu (god form)',    icon:'🐋', base:{hp:4200, atk:130, def:40,  spd:22}, skill:{name:'Vague divine',        mult:2.0} },
+  { name:'Ksbr',               icon:'🥷', base:{hp:5800, atk:160, def:45,  spd:25}, skill:{name:'Combo ravageur',      mult:2.0} },
+  { name:'Shika',              icon:'🦌', base:{hp:7500, atk:210, def:40,  spd:30}, skill:{name:'Instinct sauvage',    mult:2.1} },
+  { name:'Léa',                icon:'🦋', base:{hp:9500, atk:260, def:60,  spd:24}, skill:{name:'Jugement',            mult:2.2} },
+  { name:'Dorimann',           icon:'👹', base:{hp:15000,atk:380, def:180, spd:28}, skill:{name:'Suprématie Doricorp', mult:2.5}, boss:true },
 ];
 const DUNGEON2_REWARD_PER_ENEMY = 9;
 const DUNGEON2_CLEAR_BONUS = { tokens:90, essence:30 };
