@@ -2506,13 +2506,13 @@ document.getElementById('skillBtn').addEventListener('click', () => playerAction
 /* ====================== DONJON : EMPIRE FLOTTÉ 7 ====================== */
 // 7 ennemis fixes à enchaîner sans régénération de PV entre chaque combat.
 const DUNGEON_ENEMIES = [
-  { name:'Yassin', icon:'😈',  base:{hp:850, atk:35, def:12, spd:14}, skill:{name:'Coup sournois', mult:1.6} },
-  { name:'Ezare',   icon:'🌪️', base:{hp:1300, atk:50, def:14, spd:16}, skill:{name:'Tempête', mult:1.7} },
-  { name:'Sung',    icon:'🐉',  base:{hp:2500, atk:80, def:50, spd:15}, skill:{name:'Souffle du dragon', mult:1.8} },
-  { name:'Biggy',   icon:'🦣',  base:{hp:3500, atk:100, def:50, spd:100}, skill:{name:'Charge massive', mult:1.7} },
-  { name:'Uzu',     icon:'🐋',  base:{hp:5000, atk:150, def:16, spd:18}, skill:{name:'Vague destructrice', mult:1.9} },
-  { name:'Sabri',   icon:'🦂',  base:{hp:6700, atk:200, def:15, spd:17}, skill:{name:'Piqûre mortelle', mult:2.0} },
-  { name:'Anis',    icon:'🌸',  base:{hp:10000, atk:300, def:150, spd:20}, skill:{name:'Même pas de ping pour l Aid', mult:2.3}, boss:true },
+  { name:'Yassin', icon:'😈',  base:{hp:850, atk:100, def:12, spd:14}, skill:{name:'Coup sournois', mult:1.6} },
+  { name:'Ezare',   icon:'🌪️', base:{hp:1300, atk:150, def:14, spd:16}, skill:{name:'Tempête', mult:1.7} },
+  { name:'Sung',    icon:'🐉',  base:{hp:2500, atk:150, def:50, spd:15}, skill:{name:'Souffle du dragon', mult:1.8} },
+  { name:'Biggy',   icon:'🦣',  base:{hp:3500, atk:200, def:50, spd:100}, skill:{name:'Charge massive', mult:1.7} },
+  { name:'Uzu',     icon:'🐋',  base:{hp:5000, atk:300, def:16, spd:18}, skill:{name:'Vague destructrice', mult:1.9} },
+  { name:'Sabri',   icon:'🦂',  base:{hp:6700, atk:400, def:15, spd:17}, skill:{name:'Piqûre mortelle', mult:2.0} },
+  { name:'Anis',    icon:'🌸',  base:{hp:10000, atk:500, def:150, spd:20}, skill:{name:'Même pas de ping pour l Aid', mult:2.3}, boss:true },
 ];
 const DUNGEON_REWARD_PER_ENEMY = 6;
 const DUNGEON_CLEAR_BONUS = { tokens:60, essence:20 };
