@@ -3273,22 +3273,22 @@ const BADGES = [
 
   /* ---------- MYTHIQUE (les plus difficiles) ---------- */
   { id:'b_enolan_67',        rarity:'mythique', icon:'👺', name:"Le 67 d'Enolan",
-    desc:'Enolan atteint le palier "67".', reward:40, target:1,
+    desc:'Enolan atteint le palier "67".', reward:500, target:1,
     progress:() => hasReachedFusionTier('enolan', 's67') ? 1 : 0 },
   { id:'b_moko_one',         rarity:'mythique', icon:'🍌', name:'Ascension ultime',
-    desc:'Un personnage atteint le palier Moko.', reward:45, target:1,
+    desc:'Un personnage atteint le palier Moko.', reward:200, target:1,
     progress:() => countCharactersAtFusionTier('moko') >= 1 ? 1 : 0 },
   { id:'b_own_king',         rarity:'mythique', icon:'👑', name:'Le Roi est là',
-    desc:'Possède Allah.', reward:35, target:1,
+    desc:'Possède Allah.', reward:1000, target:1,
     progress:() => ownsCharacter('roi67') ? 1 : 0 },
   { id:'b_wins100',          rarity:'mythique', icon:'⚔️', name:'Sang et Légende',
-    desc:'Gagne 100 combats.', reward:45, target:100,
+    desc:'Gagne 100 combats.', reward:150, target:100,
     progress:() => state.counters.wins },
   { id:'b_master_forge',     rarity:'mythique', icon:'🔨', name:'Maître forgeron',
-    desc:'Tous les équipements (armes, armures, amulettes) améliorés au niveau 10.', reward:40, target:1,
+    desc:'Tous les équipements (armes, armures, amulettes) améliorés au niveau 10.', reward:150, target:1,
     progress:() => allItemsUpgraded(10) ? 1 : 0 },
   { id:'b_absolute_pantheon',rarity:'mythique', icon:'🌌', name:'Panthéon absolu',
-    desc:'Tous les personnages niveau 10+, et arsenal, blindage et amulettes complets.', reward:50, target:1,
+    desc:'Tous les personnages niveau 10+, et arsenal, blindage et amulettes complets.', reward:500, target:1,
     progress:() => (countCharactersAtLevel(10) >= CHARACTERS.length && ownsAllItemsOfSlot('arme') && ownsAllItemsOfSlot('armure') && ownsAllItemsOfSlot('amulette')) ? 1 : 0 },
 ];
 
