@@ -3698,7 +3698,7 @@ document.getElementById('skinNext').addEventListener('click', () => {
 /* ====================== ÉVÉNEMENT ALÉATOIRE : STREAM DE HUNTER404 ====================== */
 // 2% de chance à chaque tentative de lancer un combat : SEUL le personnage sélectionné à
 // ce moment-là ne peut plus combattre pendant 5 minutes (les autres restent utilisables).
-const STREAM_EVENT_CHANCE = 0.001;
+const STREAM_EVENT_CHANCE = 0.0001;
 const STREAM_EVENT_DURATION_MS = 5 * 60 * 1000;
 let streamEventTickInterval = null;
 
@@ -3789,7 +3789,7 @@ function updateFightLockUI(){
 // 1% de chance à CHAQUE clic sur un bouton d'ouverture de boîte (simple ou x3/x5/x10 :
 // la probabilité reste 1% par clic, peu importe le nombre de boîtes ouvertes d'un coup).
 // En cas de déclenchement : -15 jetons et impossible d'ouvrir la moindre boîte pendant 3 minutes.
-const CUSTOMS_EVENT_CHANCE = 0.001;
+const CUSTOMS_EVENT_CHANCE = 0.00001;
 const CUSTOMS_EVENT_DURATION_MS = 3 * 60 * 1000;
 const CUSTOMS_TOKEN_LOSS = 15;
 let customsEventTickInterval = null;
